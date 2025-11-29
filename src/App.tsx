@@ -1,16 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import AppLayout from "./components/layout/AppLayout";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import Categorias from "./pages/Categorias";
 import NotFound from "./pages/NotFound";
-import Produtos from "./pages/Produtos";
-import Compras from "./pages/Compras";
-import Vendas from "./pages/Vendas";
-import EntradasFinanceiras from "./pages/EntradasFinanceiras";
-import FinanceiroPage from "./pages/Financeiro";
+import AssociacaoPage from "./pages/AssociacaoPage";
+import AssociadosPage from "./pages/AssociadosPage";
+import JogosPage from "./pages/JogosPage";
+import EstatisticasPage from "./pages/EstatisticasPage";
+import GaleriaPage from "./pages/GaleriaPage";
+import UsuariosPage from "./pages/UsuariosPage";
 import Configuracoes from "./pages/Configuracoes";
 import { useAuth } from "./context/AuthContext";
 import { useNavigation, type AppView } from "./context/NavigationContext";
@@ -19,18 +19,18 @@ function renderAuthenticatedView(view: AppView) {
   switch (view) {
     case "home":
       return <Home />;
-    case "produtos":
-      return <Produtos />;
-    case "categorias":
-      return <Categorias />;
-    case "compras":
-      return <Compras />;
-    case "vendas":
-      return <Vendas />;
-    case "entradasFinanceiras":
-      return <EntradasFinanceiras />;
-    case "financeiro":
-      return <FinanceiroPage />;
+    case "associacao":
+      return <AssociacaoPage />;
+    case "associados":
+      return <AssociadosPage />;
+    case "jogos":
+      return <JogosPage />;
+    case "estatisticas":
+      return <EstatisticasPage />;
+    case "galeria":
+      return <GaleriaPage />;
+    case "usuarios":
+      return <UsuariosPage />;
     case "configuracoes":
       return <Configuracoes />;
     default:
@@ -39,25 +39,25 @@ function renderAuthenticatedView(view: AppView) {
 }
 
 function App() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { currentView, goTo } = useNavigation();
+  const [authScreen, setAuthScreen] = useState<"login" | "signup">("login");
 
+  // Quando o usuário autenticar, garante que a view atual do app seja 'home'
   useEffect(() => {
-    if (!isAuthenticated && currentView !== "login" && currentView !== "signup") {
-      goTo("login");
-    }
-  }, [isAuthenticated, currentView, goTo]);
-
-  useEffect(() => {
-    if (isAuthenticated && user && (currentView === "login" || currentView === "signup")) {
+    if (isAuthenticated) {
       goTo("home");
     }
-  }, [isAuthenticated, user, currentView, goTo]);
+  }, [isAuthenticated, goTo]);
 
   if (!isAuthenticated) {
     return (
       <>
-        {currentView === "signup" ? <Signup /> : <Login />}
+        {authScreen === "signup" ? (
+          <Signup onSwitchAuth={(s) => setAuthScreen(s)} />
+        ) : (
+          <Login onSwitchAuth={(s) => setAuthScreen(s)} />
+        )}
         <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
       </>
     );

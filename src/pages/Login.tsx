@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import { Eye, EyeOff, Lock, Mail, Sparkles, UserPlus } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigation } from "../context/NavigationContext";
+import type { FC } from "react";
 import toast from "react-hot-toast";
 import { sendResetCode, validateResetCode, resetPassword } from "../lib/passwordReset";
 
-export default function Login() {
+type LoginProps = {
+    onSwitchAuth?: (screen: "login" | "signup") => void;
+};
+
+const Login: FC<LoginProps> = ({ onSwitchAuth }) => {
     const { login } = useAuth();
-    const { goTo } = useNavigation();
+
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
@@ -225,7 +229,7 @@ export default function Login() {
 
                                     <button
                                         type="button"
-                                        onClick={() => goTo("signup")}
+                                        onClick={() => onSwitchAuth?.("signup")}
                                         className="w-full h-11 mt-4 rounded-xl border border-white/20 dark:border-white/20 bg-white/5 dark:bg-white/5 font-semibold text-white dark:text-white hover:bg-white/10 dark:hover:bg-white/10 hover:border-white/30 dark:hover:border-white/30 transition flex items-center justify-center gap-2 border-[#d8b6ef] dark:border-white/20 bg-white/20 dark:bg-white/5 text-[#2a143c] dark:text-white hover:bg-white/30 dark:hover:bg-white/10"
                                     >
                                         <UserPlus className="h-5 w-5" />
@@ -370,4 +374,6 @@ export default function Login() {
             `}</style>
         </div>
     );
-}
+};
+
+export default Login;

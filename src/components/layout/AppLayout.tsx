@@ -6,15 +6,17 @@ import {
     LogOut,
     Menu,
     Moon,
-    PieChart,
-    Settings,
-    ShoppingCart,
-    Sparkles,
     Sun,
-    Tags,
-    TrendingUp,
-    Wallet2,
+    Sparkles,
     X,
+    LayoutDashboard,
+    Shield,
+    Users,
+    UserCircle2,
+    CalendarRange,
+    Trophy,
+    Image as ImageIcon,
+    Settings,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTheme } from "../../hooks/useTheme";
@@ -35,43 +37,49 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
     {
         label: "Início",
-        description: "Indicadores e alertas inteligentes",
+        description: "Visão geral da associação, alertas e destaques",
         view: "home",
-        icon: PieChart,
+        icon: LayoutDashboard,
     },
     {
-        label: "Categorias",
-        description: "Gestão de categorias de produtos",
-        view: "categorias",
-        icon: Tags,
+        label: "Minha Associação",
+        description: "Dados da associação, logo, cidade e regras",
+        view: "associacao",
+        icon: Shield,
     },
     {
-        label: "Produtos",
-        description: "Portfólio premium e curadoria",
-        view: "produtos",
-        icon: Sparkles,
+        label: "Associados",
+        description: "Cadastro de membros, jogadores e status",
+        view: "associados",
+        icon: UserCircle2,
     },
     {
-        label: "Compras",
-        description: "Fornecedores e entrada de estoque",
-        view: "compras",
-        icon: ShoppingCart,
+        label: "Jogos & Partidas",
+        description: "Agenda, escalações e presenças dos jogos",
+        view: "jogos",
+        icon: CalendarRange,
     },
     {
-        label: "Vendas",
-        description: "Metas e oportunidades",
-        view: "vendas",
-        icon: TrendingUp,
+        label: "Estatísticas",
+        description: "Artilharia, presenças, cartões e rankings",
+        view: "estatisticas",
+        icon: Trophy,
     },
     {
-        label: "Financeiro",
-        description: "Entradas, despesas, extrato e resumo",
-        view: "financeiro",
-        icon: Wallet2,
+        label: "Galeria",
+        description: "Fotos e vídeos dos jogos da associação",
+        view: "galeria",
+        icon: ImageIcon,
+    },
+    {
+        label: "Usuários",
+        description: "Contas com acesso à plataforma",
+        view: "usuarios",
+        icon: Users,
     },
     {
         label: "Configurações",
-        description: "Preferências e integrações",
+        description: "Preferências do sistema e tema",
         view: "configuracoes",
         icon: Settings,
     },
@@ -80,26 +88,18 @@ const NAV_ITEMS: NavItem[] = [
 export default function AppLayout({ children }: AppLayoutProps) {
     const { isDark, toggleTheme } = useTheme();
     const { isAuthenticated, logout, user } = useAuth();
-    const { currentView, goTo, isCurrent } = useNavigation();
+    const { goTo, isCurrent } = useNavigation();
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-    const primaryActionLabel = useMemo(() => {
-        if (isAuthenticated) return "Sair";
-        return currentView === "signup" ? "Ir para login" : "Entrar";
-    }, [currentView, isAuthenticated]);
+    const primaryActionLabel = useMemo(() => (isAuthenticated ? "Sair" : "Entrar"), [isAuthenticated]);
 
     const handlePrimaryAction = () => {
         if (isAuthenticated) {
             logout();
             return;
         }
-
-        if (currentView === "signup") {
-            goTo("login");
-        } else {
-            goTo("home");
-        }
+        // Quando não autenticado, AppLayout normalmente não é exibido.
     };
 
     const renderNavItems = (compact = false) => (

@@ -1,12 +1,18 @@
-export default function Configuracoes() {
+import React from "react";
+
+const Configuracoes: React.FC = () => {
     return (
-        <div className="flex h-full items-center justify-center">
-            <div className="text-center space-y-4">
-                <h1 className="text-3xl font-semibold">Configurações</h1>
-                <p className="text-sm text-white/70 dark:text-white/70 max-w-md mx-auto">
-                    Preferências, integrações e parâmetros do sistema. Placeholder simples.
-                </p>
+        <div className="space-y-4">
+            <header>
+                <h1 className="text-2xl font-semibold">Configurações</h1>
+                <p className="text-sm text-muted-foreground">Preferências do sistema e tema</p>
+            </header>
+
+            <div className="rounded-lg border p-4">
+                <p className="text-sm text-muted-foreground">Aqui ficam as configurações gerais do sistema.</p>
             </div>
         </div>
     );
-}
+};
+
+export default Configuracoes;

@@ -2,15 +2,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 type CoreView =
     | "home"
-    | "produtos"
-    | "categorias"
-    | "compras"
-    | "vendas"
-    | "entradasFinanceiras"
-    | "financeiro"
-    | "configuracoes"
-    | "login"
-    | "signup";
+    | "associacao"
+    | "associados"
+    | "jogos"
+    | "estatisticas"
+    | "galeria"
+    | "usuarios"
+    | "configuracoes";
 
 export type AppView = CoreView;
 
@@ -22,19 +20,18 @@ interface NavigationContextValue {
 
 const NavigationContext = createContext<NavigationContextValue | undefined>(undefined);
 
-const DEFAULT_VIEW: AppView = "login";
+const DEFAULT_VIEW: AppView = "home";
 
 function isValidView(value: string): value is AppView {
     return (
         value === "home" ||
-        value === "produtos" ||
-        value === "compras" ||
-        value === "vendas" ||
-        value === "entradasFinanceiras" ||
-        value === "financeiro" ||
-        value === "configuracoes" ||
-        value === "login" ||
-        value === "signup"
+        value === "associacao" ||
+        value === "associados" ||
+        value === "jogos" ||
+        value === "estatisticas" ||
+        value === "galeria" ||
+        value === "usuarios" ||
+        value === "configuracoes"
     );
 }
 
@@ -78,7 +75,6 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         }),
         [currentView, goTo, isCurrent]
     );
-    console.log(currentView)
     return <NavigationContext.Provider value={value}>{children}</NavigationContext.Provider>;
 }
 
