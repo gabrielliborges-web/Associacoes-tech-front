@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .animate-soft-pulse {
+    animation: softPulse 14s ease-in-out infinite alternate;
+  }
+
+  .animate-soft-orbit {
+    animation: softOrbit 18s linear infinite;
+  }
+
+  .animate-soft-graph {
+    animation: softGraph 6s ease-in-out infinite;
+  }
+
+  .animate-fade-slide {
+    animation: fadeSlide 0.9s ease-out both;
+  }
+
+  .animate-soft-bounce {
+    animation: softBounce 3.2s ease-in-out infinite;
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-in;
+  }
+}
+
+@keyframes softPulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(1.05);
+    opacity: 0.95;
+  }
+}
+
+@keyframes softOrbit {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(3deg);
+  }
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+}
+
+@keyframes softGraph {
+  0% {
+    transform: scaleX(0.85);
+    opacity: 0.65;
+  }
+  50% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(0.85);
+    opacity: 0.7;
+  }
+}
+
+@keyframes fadeSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(35px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes softBounce {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}

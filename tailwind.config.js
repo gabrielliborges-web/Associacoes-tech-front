@@ -1,0 +1,161 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: "class",
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          DEFAULT: "#8E4EC6",
+          dark: {
+            1: "#18111B",
+            2: "#1E1523",
+            3: "#3D224E",
+            4: "#48295C",
+            5: "#54346B",
+            6: "#8457AA",
+            7: "#8E4EC6",
+            8: "#9A5CD0",
+            9: "#D19DFF",
+            10: "#ECD9FA",
+          },
+          darkA: {
+            1: "#B412F90B",
+            2: "#B744F714",
+            3: "#C150FF2D",
+            4: "#BB53FD42",
+            5: "#BE5CFD51",
+            6: "#C16DFD61",
+            7: "#C378FD7A",
+            8: "#C47EFFA4",
+            9: "#B661FFC2",
+            10: "#BC6FFFCD",
+            11: "#D19DFF",
+            12: "#F1DDFFFA",
+          },
+          light: {
+            1: "#FEFCFE",
+            2: "#FBF7FE",
+            3: "#F7EDFE",
+            4: "#F2E2FC",
+            5: "#EAD5F9",
+            6: "#E0C4F4",
+            7: "#D1AFEC",
+            8: "#BE93E4",
+            9: "#8E4EC6",
+            10: "#8347B9",
+            11: "#8145B5",
+            12: "#402060",
+          },
+          lightA: {
+            1: "#AA00AA03",
+            2: "#8000E008",
+            3: "#8E00F112",
+            4: "#8D00E51D",
+            5: "#8000DB2A",
+            6: "#7A01D03B",
+            7: "#6D00C350",
+            8: "#6600C06C",
+            9: "#5C00ADB1",
+            10: "#53009EB8",
+            11: "#52009ABA",
+            12: "#250049DF",
+          },
+        },
+
+        mauve: {
+          dark: {
+            1: "#121113",
+            2: "#1A191B",
+            3: "#232225",
+            4: "#2B292D",
+            5: "#323035",
+            6: "#3C393F",
+            7: "#49474E",
+            8: "#625F69",
+            9: "#6F6D78",
+            10: "#7C7A85",
+            11: "#B5B2BC",
+            12: "#EEEEF0",
+          },
+          darkA: {
+            1: "#00000000",
+            2: "#F5F4F609",
+            3: "#EBEAF814",
+            4: "#EEE5F81D",
+            5: "#EFE6FE25",
+            6: "#F1E6FD30",
+            7: "#EEE9FF40",
+            8: "#EEE7FF5D",
+            9: "#EAE6FD6E",
+            10: "#ECE9FD7C",
+            11: "#F5F1FFB7",
+            12: "#FDFDFFEF",
+          },
+          light: {
+            1: "#FDFCFD",
+            2: "#FAF9FB",
+            3: "#F2EFF3",
+            4: "#EAE7EC",
+            5: "#E3DFE6",
+            6: "#DBD8E0",
+            7: "#D0CDD7",
+            8: "#BCBAC7",
+            9: "#8E8C99",
+            10: "#84828E",
+            11: "#65636D",
+            12: "#211F26",
+          },
+          lightA: {
+            1: "#55005503",
+            2: "#2B005506",
+            3: "#30004010",
+            4: "#20003618",
+            5: "#20003820",
+            6: "#14003527",
+            7: "#10003332",
+            8: "#08003145",
+            9: "#05001D73",
+            10: "#0500197D",
+            11: "#0400119C",
+            12: "#020008E0",
+          },
+        },
+
+        background: {
+          light: "#FFFFFF",
+          dark: "#121113",
+        },
+
+        border: {
+          subtle: "#F1E6FD",
+        },
+
+        text: {
+          primary: {
+            light: "#1A1523",
+            dark: "#FFFFFF",
+          },
+          secondary: {
+            light: "#706F85",
+            dark: "#B5B2BC",
+          },
+        },
+      },
+      fontFamily: {
+        montserrat: ["Montserrat", "sans-serif"],
+      },
+    },
+  },
+  plugins: [
+    require("tailwindcss-scrollbar"),
+    function ({ addUtilities }) {
+      addUtilities({
+        ".bg-modal-overlay": {
+          backgroundColor: "#B5B2BC40",
+          backdropFilter: "blur(4px)",
+        },
+      });
+    },
+  ],
+};
