@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 type CoreView =
     | "home"
+    | "minhaAssociacao"
     | "associacao"
     | "associados"
     | "jogos"
@@ -25,6 +26,7 @@ const DEFAULT_VIEW: AppView = "home";
 function isValidView(value: string): value is AppView {
     return (
         value === "home" ||
+        value === "minhaAssociacao" ||
         value === "associacao" ||
         value === "associados" ||
         value === "jogos" ||

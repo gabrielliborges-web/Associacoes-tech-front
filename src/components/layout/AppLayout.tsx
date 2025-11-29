@@ -44,7 +44,7 @@ const NAV_ITEMS: NavItem[] = [
     {
         label: "Minha Associação",
         description: "Dados da associação, logo, cidade e regras",
-        view: "associacao",
+        view: "minhaAssociacao",
         icon: Shield,
     },
     {

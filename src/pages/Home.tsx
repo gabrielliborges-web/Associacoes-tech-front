@@ -1,3 +1,4 @@
+import CampoFutebol from "../components/common/CampoFutebol";
 
 export default function Home() {
     // Simulando busca de dados com delay
@@ -12,8 +13,11 @@ export default function Home() {
                 </p>
             </div>
 
-
-
+            {/* Campo de Futebol Interativo */}
+            <CampoFutebol formation="4-3-3" onChange={(posicoes) => {
+                // Você pode salvar ou usar as posições dos jogadores aqui
+                console.log("Posições dos jogadores:", posicoes);
+            }} />
 
         </div>
     );

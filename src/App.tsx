@@ -12,6 +12,7 @@ import EstatisticasPage from "./pages/EstatisticasPage";
 import GaleriaPage from "./pages/GaleriaPage";
 import UsuariosPage from "./pages/UsuariosPage";
 import Configuracoes from "./pages/Configuracoes";
+import MinhaAssociacao from "./pages/MinhaAssociacao";
 import { useAuth } from "./context/AuthContext";
 import { useNavigation, type AppView } from "./context/NavigationContext";
 
@@ -19,6 +20,8 @@ function renderAuthenticatedView(view: AppView) {
   switch (view) {
     case "home":
       return <Home />;
+    case "minhaAssociacao":
+      return <MinhaAssociacao />;
     case "associacao":
       return <AssociacaoPage />;
     case "associados":
