@@ -219,7 +219,7 @@ const Login: FC<LoginProps> = ({ onSwitchAuth }) => {
                                     <div className="pt-4">
                                         <div className="text-center text-sm text-gray-600 dark:text-gray-400">Novo por aqui?</div>
                                         <div className="mt-3">
-                                            <button type="button" onClick={() => onSwitchAuth?.("signup")} className="w-full rounded-xl border border-gray-200 dark:border-gray-700 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-900">Criar minha conta</button>
+                                            <button type="button" onClick={() => onSwitchAuth?.("signup")} className="w-full rounded-xl border border-gray-200 dark:border-gray-700 py-2 text-sm  dark:text-gray-400 font-medium hover:bg-gray-50 dark:hover:bg-gray-900">Criar minha conta</button>
                                         </div>
                                     </div>
                                 </form>
