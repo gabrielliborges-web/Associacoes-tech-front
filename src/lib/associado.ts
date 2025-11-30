@@ -71,7 +71,7 @@ export const associadoApi = {
 
   // Atualizar associado
   updateAssociado: async (id: number, data: FormData): Promise<Associado> => {
-    const response = await api.patch(`/associados/associados/${id}`, data, {
+    const response = await api.patch(`/associados/${id}`, data, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
@@ -80,6 +80,16 @@ export const associadoApi = {
   // Desativar associado
   deactivateAssociado: async (id: number): Promise<{ message: string }> => {
     const response = await api.delete(`/associados/${id}`);
+    return response.data;
+  },
+  // Excluir associado permanentemente
+  deleteAssociado: async (id: number): Promise<{ message: string }> => {
+    const response = await api.delete(`/associados/${id}/permanent`);
+    return response.data;
+  },
+  // Ativar associado
+  activateAssociado: async (id: number): Promise<{ message: string }> => {
+    const response = await api.patch(`/associados/${id}/activate`);
     return response.data;
   },
 };

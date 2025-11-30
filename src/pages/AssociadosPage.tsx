@@ -6,10 +6,12 @@ import toast from "react-hot-toast";
 const posicoes = ["GOLEIRO", "ZAGUEIRO", "LATERAL", "VOLANTE", "MEIA", "ATACANTE"];
 const pernas = ["DIREITA", "ESQUERDA", "AMBIDESTRO"];
 
-function AssociadoCard({ associado, onEdit, onDelete }: {
+function AssociadoCard({ associado, onEdit, onDeactivate, onDeletePermanent, onActivate }: {
     associado: Associado;
     onEdit: (a: Associado) => void;
-    onDelete: (id: number) => void;
+    onDeactivate: (id: number) => void;
+    onDeletePermanent: (id: number) => void;
+    onActivate: (id: number) => void;
 }) {
     return (
         <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-md p-4 flex items-center gap-4 border border-green-200 dark:border-green-800">
@@ -38,7 +40,17 @@ function AssociadoCard({ associado, onEdit, onDelete }: {
             </div>
             <div className="flex flex-col gap-2">
                 <button onClick={() => onEdit(associado)} className="px-3 py-1 rounded-lg bg-green-600 text-white text-xs hover:bg-green-700">Editar</button>
-                <button onClick={() => onDelete(associado.id)} className="px-3 py-1 rounded-lg bg-red-500 text-white text-xs hover:bg-red-600">Desativar</button>
+                {associado.ativo ? (
+                    <>
+                        <button onClick={() => onDeactivate(associado.id)} className="px-3 py-1 rounded-lg bg-red-500 text-white text-xs hover:bg-red-600">Desativar</button>
+                        <button onClick={() => onDeletePermanent(associado.id)} className="px-3 py-1 rounded-lg bg-red-800 text-white text-xs hover:bg-red-900">Excluir</button>
+                    </>
+                ) : (
+                    <>
+                        <button onClick={() => onActivate(associado.id)} className="px-3 py-1 rounded-lg bg-green-500 text-white text-xs hover:bg-green-600">Ativar</button>
+                        <button onClick={() => onDeletePermanent(associado.id)} className="px-3 py-1 rounded-lg bg-red-800 text-white text-xs hover:bg-red-900">Excluir</button>
+                    </>
+                )}
             </div>
         </div>
     );
@@ -143,6 +155,8 @@ const AssociadosPage: React.FC = () => {
     const [showForm, setShowForm] = useState(false);
     const [editData, setEditData] = useState<Associado | null>(null);
     const [confirmId, setConfirmId] = useState<number | null>(null);
+    const [confirmAction, setConfirmAction] = useState<'deactivate' | 'delete' | 'activate' | null>(null);
+    const [confirmLoading, setConfirmLoading] = useState(false);
 
     async function fetchAssociados() {
         if (!associacao?.id) return;
@@ -181,22 +195,48 @@ const AssociadosPage: React.FC = () => {
         }
     }
 
-    async function handleDelete(id: number) {
+    function handleDeactivateTrigger(id: number) {
         setConfirmId(id);
+        setConfirmAction('deactivate');
+    }
+
+    function handleDeletePermanentTrigger(id: number) {
+        setConfirmId(id);
+        setConfirmAction('delete');
+    }
+
+    function handleActivateTrigger(id: number) {
+        setConfirmId(id);
+        setConfirmAction('activate');
     }
 
     async function confirmDelete() {
-        if (!confirmId) return;
+        if (!confirmId || !confirmAction) return;
+        setConfirmLoading(true);
         try {
-            await associadoApi.deactivateAssociado(confirmId);
-            toast.success("Associado desativado!");
-            setAssociados((prev) => prev.map(a => a.id === confirmId ? { ...a, ativo: false } : a));
+            if (confirmAction === 'deactivate') {
+                await associadoApi.deactivateAssociado(confirmId);
+                toast.success("Associado desativado!");
+                setAssociados((prev) => prev.map(a => a.id === confirmId ? { ...a, ativo: false } : a));
+            } else if (confirmAction === 'delete') {
+                await associadoApi.deleteAssociado(confirmId);
+                toast.success("Associado excluído!");
+                setAssociados((prev) => prev.filter(a => a.id !== confirmId));
+            } else if (confirmAction === 'activate') {
+                await associadoApi.activateAssociado(confirmId);
+                toast.success("Associado ativado!");
+                setAssociados((prev) => prev.map(a => a.id === confirmId ? { ...a, ativo: true } : a));
+            }
         } catch (err: any) {
-            toast.error(err?.response?.data?.error || "Erro ao desativar associado");
+            toast.error(err?.response?.data?.error || "Erro ao realizar operação");
         } finally {
+            setConfirmLoading(false);
             setConfirmId(null);
+            setConfirmAction(null);
         }
     }
+
+    // activation will be performed after confirmation modal
     return (
         <div className="space-y-6 max-w-3xl mx-auto">
             <header className="flex items-center justify-between">
@@ -230,7 +270,9 @@ const AssociadosPage: React.FC = () => {
                                 key={a.id}
                                 associado={a}
                                 onEdit={(ass) => { setEditData(ass); setShowForm(true); }}
-                                onDelete={handleDelete}
+                                onDeactivate={handleDeactivateTrigger}
+                                onDeletePermanent={handleDeletePermanentTrigger}
+                                onActivate={handleActivateTrigger}
                             />
                         ))
                     )
@@ -240,11 +282,13 @@ const AssociadosPage: React.FC = () => {
             {confirmId !== null && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
                     <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-lg p-8 max-w-sm w-full flex flex-col items-center">
-                        <h2 className="text-lg font-bold mb-4 text-green-700 dark:text-green-300">Confirmar desativação</h2>
-                        <p className="mb-6 text-center">Deseja realmente desativar este associado?</p>
+                        <h2 className="text-lg font-bold mb-4 text-green-700 dark:text-green-300">{confirmAction === 'delete' ? 'Confirmar exclusão' : confirmAction === 'activate' ? 'Confirmar ativação' : 'Confirmar desativação'}</h2>
+                        <p className="mb-6 text-center">{confirmAction === 'delete' ? 'Deseja realmente excluir este associado? Essa ação é irreversível.' : confirmAction === 'activate' ? 'Deseja realmente ativar este associado?' : 'Deseja realmente desativar este associado?'}</p>
                         <div className="flex gap-4">
-                            <button onClick={() => setConfirmId(null)} className="px-6 py-2 rounded-lg bg-neutral-100 text-gray-700 border border-neutral-300 hover:bg-neutral-200">Cancelar</button>
-                            <button onClick={confirmDelete} className="px-6 py-2 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700">Desativar</button>
+                            <button disabled={confirmLoading} onClick={() => { setConfirmId(null); setConfirmAction(null); }} className="px-6 py-2 rounded-lg bg-neutral-100 text-gray-700 border border-neutral-300 hover:bg-neutral-200">Cancelar</button>
+                            <button disabled={confirmLoading} onClick={confirmDelete} className={`px-6 py-2 rounded-lg text-white font-bold ${confirmAction === 'delete' ? 'bg-red-800 hover:bg-red-900' : confirmAction === 'activate' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>
+                                {confirmLoading ? 'Processando...' : (confirmAction === 'delete' ? 'Excluir' : confirmAction === 'activate' ? 'Ativar' : 'Desativar')}
+                            </button>
                         </div>
                     </div>
                 </div>
