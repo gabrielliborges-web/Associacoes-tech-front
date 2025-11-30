@@ -14,6 +14,7 @@ import {
     Users,
     UserCircle2,
     CalendarRange,
+    CreditCard,
     Trophy,
     Image as ImageIcon,
     Settings,
@@ -82,6 +83,12 @@ const NAV_ITEMS: NavItem[] = [
         description: "Preferências do sistema e tema",
         view: "configuracoes",
         icon: Settings,
+    },
+    {
+        label: "Mensalidades",
+        description: "Carnê / mensalidades dos associados",
+        view: "mensalidades",
+        icon: CreditCard,
     },
 ];
 

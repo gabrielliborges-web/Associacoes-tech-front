@@ -9,7 +9,8 @@ type CoreView =
     | "estatisticas"
     | "galeria"
     | "usuarios"
-    | "configuracoes";
+    | "configuracoes"
+    | "mensalidades";
 
 export type AppView = CoreView;
 
@@ -33,7 +34,8 @@ function isValidView(value: string): value is AppView {
         value === "estatisticas" ||
         value === "galeria" ||
         value === "usuarios" ||
-        value === "configuracoes"
+        value === "configuracoes" ||
+        value === "mensalidades"
     );
 }
 
