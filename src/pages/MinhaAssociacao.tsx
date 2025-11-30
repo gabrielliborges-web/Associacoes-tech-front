@@ -128,6 +128,15 @@ export default function MinhaAssociacao() {
                             <p className="mt-3 text-gray-600 dark:text-gray-300 whitespace-pre-line">{dados.regrasInternas || 'Nenhuma regra definida.'}</p>
                         </div>
                     </div>
+                    <div className="mt-6 flex justify-end">
+                        <button
+                            type="button"
+                            onClick={() => setEditMode(true)}
+                            className="px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white hover:opacity-95 transition"
+                        >
+                            Editar associação
+                        </button>
+                    </div>
                 </div>
             ) : (
                 <form onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto flex flex-col gap-8 p-2 md:p-6">
