@@ -13,7 +13,7 @@ import GaleriaPage from "./pages/GaleriaPage";
 import UsuariosPage from "./pages/UsuariosPage";
 import Configuracoes from "./pages/Configuracoes";
 import MinhaAssociacao from "./pages/MinhaAssociacao";
-import MensalidadesPage from "./pages/MensalidadesPage";
+import Mensalidades from "./pages/Mensalidades";
 import { useAuth } from "./context/AuthContext";
 import { useNavigation, type AppView } from "./context/NavigationContext";
 
@@ -34,7 +34,7 @@ function renderAuthenticatedView(view: AppView) {
     case "galeria":
       return <GaleriaPage />;
     case "mensalidades":
-      return <MensalidadesPage />;
+      return <Mensalidades />;
     case "usuarios":
       return <UsuariosPage />;
     case "configuracoes":

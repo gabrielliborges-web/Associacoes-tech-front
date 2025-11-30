@@ -36,6 +36,20 @@ export const mensalidadesApi = {
     return res.data;
   },
 
+  getConfig: async () => {
+    const res = await api.get(`/financeiro/mensalidades/config`);
+    return res.data;
+  },
+
+  upsertConfig: async (payload: {
+    valorPadrao: number | string;
+    diaVencimento: number;
+    ativo?: boolean;
+  }) => {
+    const res = await api.post(`/financeiro/mensalidades/config`, payload);
+    return res.data;
+  },
+
   pagarMensalidade: async (
     id: number,
     payload: {

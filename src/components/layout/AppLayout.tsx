@@ -49,6 +49,12 @@ const NAV_ITEMS: NavItem[] = [
         icon: Shield,
     },
     {
+        label: "Mensalidades",
+        description: "Carnê / mensalidades dos associados",
+        view: "mensalidades",
+        icon: CreditCard,
+    },
+    {
         label: "Associados",
         description: "Cadastro de membros, jogadores e status",
         view: "associados",
@@ -84,12 +90,7 @@ const NAV_ITEMS: NavItem[] = [
         view: "configuracoes",
         icon: Settings,
     },
-    {
-        label: "Mensalidades",
-        description: "Carnê / mensalidades dos associados",
-        view: "mensalidades",
-        icon: CreditCard,
-    },
+
 ];
 
 export default function AppLayout({ children }: AppLayoutProps) {
