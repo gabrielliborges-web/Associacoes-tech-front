@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { getMinhaAssociacao, updateMinhaAssociacao } from "../lib/associacao";
+import AssociationDisplay from "../components/associacao/AssociationDisplay";
+import type { Associacao } from "../lib/associacao";
 
 const TIPO_JOGO_OPCOES = [
     { value: "BABA", label: "Baba" },
@@ -53,15 +55,18 @@ export default function MinhaAssociacao() {
             if (!["BABA", "AMISTOSO", "CAMPEONATO", "TREINO"].includes(formData.get("tipoJogoPadrao") as string)) {
                 formData.set("tipoJogoPadrao", "BABA");
             }
-            // Converte FormData para objeto
-            const dataObj: { [key: string]: any } = {};
-            formData.forEach((value, key) => {
-                dataObj[key] = value;
-            });
-            await updateMinhaAssociacao(dataObj);
+            // Remove logoUrl se o file for enviado
+            if (formData.get("logo") instanceof File && (formData.get("logo") as File).size > 0) {
+                formData.delete("logoUrl");
+            }
+            await updateMinhaAssociacao(formData);
             toast.success("Associação atualizada!");
             setEditMode(false);
-            setDadosOriginais(prev => ({ ...prev, ...dataObj }));
+            // Atualiza dadosOriginais com resposta da API
+            getMinhaAssociacao().then((data) => {
+                setDadosOriginais((prev) => ({ ...prev, ...data }));
+                setDados((prev) => ({ ...prev, ...data }));
+            });
         } catch {
             toast.error("Erro ao salvar");
         } finally {
@@ -74,235 +79,138 @@ export default function MinhaAssociacao() {
         setEditMode(false);
     }
 
-    // Classes utilitárias para cards, inputs, botões
-    const cardClass = "bg-white border border-neutral-200 rounded-2xl p-6 w-full";
-    const inputClass = "input w-full border border-neutral-200 rounded-xl p-2 mt-1 text-gray-900 focus:border-primary focus:ring-primary";
-    const labelClass = "block text-sm font-semibold text-gray-700 mb-1";
-    const btnPrimary = "btn btn-primary w-full md:w-auto px-6 py-2 rounded-xl font-bold bg-primary text-white hover:bg-primary-dark transition disabled:opacity-60";
-    const btnDefault = "btn w-full md:w-auto px-6 py-2 rounded-xl font-bold bg-neutral-100 text-gray-700 border border-neutral-300 hover:bg-neutral-200 transition";
-
     // Header + card compacto
     return (
         <div className="max-w-4xl mx-auto p-4 animate-fade-in">
-            <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8">
-                <div className="flex-1">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-1">Minha Associação</h1>
-                    <p className="text-gray-500 text-base mb-2">Gerencie os dados oficiais do seu baba</p>
-                </div>
-                <div className={cardClass + " flex items-center gap-4 md:w-[320px]"}>
-                    {dados.logoUrl ? (
-                        <img src={dados.logoUrl} alt="Logo" className="w-16 h-16 rounded-full border border-neutral-200" />
-                    ) : (
-                        <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-2xl text-gray-400">?</div>
-                    )}
-                    <div>
-                        <div className="font-bold text-lg text-gray-900">{dados.nome || "Nome da associação"}</div>
-                        <div className="text-sm text-gray-500">{dados.apelido}</div>
-                        <div className="text-xs text-gray-400">{dados.cidade}{dados.estado ? `/${dados.estado}` : ""}</div>
-                    </div>
-                </div>
+            <div className="text-center mb-8">
+                <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Minha Associação</h1>
+                <p className="text-gray-500 dark:text-gray-400 text-lg">Gerencie os dados oficiais do seu baba</p>
             </div>
 
             {/* Display ou Edit */}
             {!editMode ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Dados da associação */}
-                    <div className={cardClass + " flex flex-col gap-4"}>
-                        <h2 className="font-semibold text-lg text-gray-900 mb-2">Dados da associação</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <span className={labelClass}>Nome</span>
-                                <div className="text-gray-800 font-medium">{dados.nome}</div>
-                            </div>
-                            <div>
-                                <span className={labelClass}>Apelido</span>
-                                <div className="text-gray-800 font-medium">{dados.apelido}</div>
-                            </div>
-                            <div className="md:col-span-2">
-                                <span className={labelClass}>Descrição / Sobre</span>
-                                <div className="text-gray-700">{dados.descricao || <span className="italic text-gray-400">Sem descrição</span>}</div>
-                            </div>
-                            <div>
-                                <span className={labelClass}>Cidade</span>
-                                <div className="text-gray-800 font-medium">{dados.cidade}</div>
-                            </div>
-                            <div>
-                                <span className={labelClass}>Estado</span>
-                                <div className="text-gray-800 font-medium">{dados.estado}</div>
-                            </div>
-                            <div className="md:col-span-2 flex items-center gap-2 mt-2">
-                                <span className={labelClass}>Logo (URL)</span>
-                                {dados.logoUrl ? (
-                                    <img src={dados.logoUrl} alt="Logo" className="w-10 h-10 rounded-full border border-neutral-200 ml-2" />
-                                ) : (
-                                    <span className="italic text-gray-400">Não informada</span>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    {/* Regras internas */}
-                    <div className={cardClass + " flex flex-col gap-4"}>
-                        <h2 className="font-semibold text-lg text-gray-900 mb-2">Regras internas</h2>
-                        <span className={labelClass}>Regras do baba</span>
-                        <div className="text-gray-700 whitespace-pre-line min-h-[80px]">{dados.regrasInternas || <span className="italic text-gray-400">Nenhuma regra cadastrada</span>}</div>
-                        <span className="text-xs text-gray-400 mt-1">Descreva aqui as regras combinadas do grupo (ex.: horário de chegada, faltas, disciplina, etc.)</span>
-                    </div>
-                    {/* Configurações do baba */}
-                    <div className={cardClass + " flex flex-col gap-4 md:col-span-2"}>
-                        <h2 className="font-semibold text-lg text-gray-900 mb-2">Configurações do baba</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <span className={labelClass}>Horário início</span>
-                                <div className="text-gray-800 font-medium">{dados.horarioPadraoInicio || <span className="italic text-gray-400">Não definido</span>}</div>
-                            </div>
-                            <div>
-                                <span className={labelClass}>Horário fim</span>
-                                <div className="text-gray-800 font-medium">{dados.horarioPadraoFim || <span className="italic text-gray-400">Não definido</span>}</div>
-                            </div>
-                            <div>
-                                <span className={labelClass}>Tipo de jogo padrão</span>
-                                <div className="text-gray-800 font-medium">{TIPO_JOGO_OPCOES.find(opt => opt.value === dados.tipoJogoPadrao)?.label || <span className="italic text-gray-400">Não definido</span>}</div>
-                            </div>
-                        </div>
-                    </div>
-                    {/* Botão editar */}
-                    <div className="md:col-span-2 flex justify-end mt-4">
-                        <button
-                            type="button"
-                            className={btnPrimary}
-                            onClick={() => setEditMode(true)}
-                        >
-                            Editar informações
-                        </button>
-                    </div>
-                </div>
+                <AssociationDisplay associacao={dados as Partial<Associacao>} onEdit={() => setEditMode(true)} />
             ) : (
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Dados da associação */}
-                    <div className={cardClass + " flex flex-col gap-4"}>
-                        <h2 className="font-semibold text-lg text-gray-900 mb-2">Dados da associação</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto flex flex-col gap-8 p-2 md:p-6">
+                    <h2 className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">Editar Associação</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="flex flex-col gap-6">
                             <div>
-                                <label className={labelClass}>Nome</label>
+                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Nome</label>
                                 <input
                                     type="text"
                                     name="nome"
                                     value={dados.nome}
                                     onChange={handleChange}
-                                    className={inputClass}
+                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
                                     required
                                     disabled={loading || saving}
                                 />
                             </div>
                             <div>
-                                <label className={labelClass}>Apelido</label>
+                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Apelido</label>
                                 <input
                                     type="text"
                                     name="apelido"
                                     value={dados.apelido}
                                     onChange={handleChange}
-                                    className={inputClass}
-                                    disabled={loading || saving}
-                                />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className={labelClass}>Descrição / Sobre</label>
-                                <input
-                                    type="text"
-                                    name="descricao"
-                                    value={dados.descricao}
-                                    onChange={handleChange}
-                                    className={inputClass}
-                                    placeholder="Sobre a associação"
+                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
                                     disabled={loading || saving}
                                 />
                             </div>
                             <div>
-                                <label className={labelClass}>Cidade</label>
+                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Descrição / Sobre</label>
+                                <textarea
+                                    name="descricao"
+                                    value={dados.descricao}
+                                    onChange={handleChange}
+                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg min-h-[80px] focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
+                                    placeholder="Sobre a associação"
+                                    disabled={loading || saving}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-6">
+                            <div>
+                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Cidade</label>
                                 <input
                                     type="text"
                                     name="cidade"
                                     value={dados.cidade}
                                     onChange={handleChange}
-                                    className={inputClass}
+                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
                                     disabled={loading || saving}
                                 />
                             </div>
                             <div>
-                                <label className={labelClass}>Estado</label>
+                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Estado</label>
                                 <input
                                     type="text"
                                     name="estado"
                                     value={dados.estado}
                                     onChange={handleChange}
-                                    className={inputClass}
+                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
                                     disabled={loading || saving}
                                 />
                             </div>
-                            <div className="md:col-span-2 flex items-center gap-2 mt-2">
-                                <label className={labelClass}>Logo (URL)</label>
+                            <div>
+                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Logo</label>
                                 <input
-                                    type="text"
-                                    name="logoUrl"
-                                    value={dados.logoUrl}
-                                    onChange={handleChange}
-                                    className={inputClass}
-                                    placeholder="URL da logo"
+                                    type="file"
+                                    name="logo"
+                                    accept="image/*"
+                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg file:mr-2 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-green-600 file:text-white file:font-bold file:cursor-pointer shadow-sm"
                                     disabled={loading || saving}
                                 />
                                 {dados.logoUrl && (
-                                    <img src={dados.logoUrl} alt="Logo" className="w-10 h-10 rounded-full border border-neutral-200 ml-2" />
+                                    <img src={dados.logoUrl} alt="Logo" className="w-16 h-16 rounded-full border-2 border-green-500 mt-2 shadow-md" />
                                 )}
                             </div>
                         </div>
                     </div>
-                    {/* Regras internas */}
-                    <div className={cardClass + " flex flex-col gap-4"}>
-                        <h2 className="font-semibold text-lg text-gray-900 mb-2">Regras internas</h2>
-                        <label className={labelClass}>Regras do baba</label>
-                        <textarea
-                            name="regrasInternas"
-                            value={dados.regrasInternas}
-                            onChange={handleChange}
-                            className={inputClass + " min-h-[120px]"}
-                            maxLength={1000}
-                            disabled={loading || saving}
-                        />
-                        <span className="text-xs text-gray-400 mt-1">Descreva aqui as regras combinadas do grupo (ex.: horário de chegada, faltas, disciplina, etc.)</span>
-                    </div>
-                    {/* Configurações do baba */}
-                    <div className={cardClass + " flex flex-col gap-4 md:col-span-2"}>
-                        <h2 className="font-semibold text-lg text-gray-900 mb-2">Configurações do baba</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex flex-col md:flex-row gap-6 mt-8">
+                        <div className="flex-1">
+                            <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Regras internas</label>
+                            <textarea
+                                name="regrasInternas"
+                                value={dados.regrasInternas}
+                                onChange={handleChange}
+                                className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg min-h-[120px] focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
+                                maxLength={1000}
+                                disabled={loading || saving}
+                            />
+                            <span className="text-xs text-gray-400 mt-1">Descreva aqui as regras combinadas do grupo (ex.: horário de chegada, faltas, disciplina, etc.)</span>
+                        </div>
+                        <div className="flex-1 flex flex-col gap-6">
                             <div>
-                                <label className={labelClass}>Horário início</label>
+                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Horário início</label>
                                 <input
                                     type="time"
                                     name="horarioPadraoInicio"
                                     value={dados.horarioPadraoInicio}
                                     onChange={handleChange}
-                                    className={inputClass}
+                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
                                     disabled={loading || saving}
                                 />
                             </div>
                             <div>
-                                <label className={labelClass}>Horário fim</label>
+                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Horário fim</label>
                                 <input
                                     type="time"
                                     name="horarioPadraoFim"
                                     value={dados.horarioPadraoFim}
                                     onChange={handleChange}
-                                    className={inputClass}
+                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
                                     disabled={loading || saving}
                                 />
                             </div>
                             <div>
-                                <label className={labelClass}>Tipo de jogo padrão</label>
+                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Tipo de jogo padrão</label>
                                 <select
                                     name="tipoJogoPadrao"
                                     value={dados.tipoJogoPadrao}
                                     onChange={handleChange}
-                                    className={inputClass}
+                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
                                     disabled={loading || saving}
                                 >
                                     {TIPO_JOGO_OPCOES.map((opt) => (
@@ -312,11 +220,10 @@ export default function MinhaAssociacao() {
                             </div>
                         </div>
                     </div>
-                    {/* Botões de ação */}
-                    <div className="md:col-span-2 flex flex-col md:flex-row justify-end gap-2 mt-4">
+                    <div className="flex gap-4 justify-end mt-8">
                         <button
                             type="button"
-                            className={btnDefault}
+                            className="px-8 py-3 rounded-xl font-bold bg-neutral-100 text-gray-700 border border-neutral-300 hover:bg-neutral-200 hover:scale-105 transition-all duration-200 shadow-sm"
                             onClick={handleCancelEdit}
                             disabled={saving}
                         >
@@ -324,7 +231,7 @@ export default function MinhaAssociacao() {
                         </button>
                         <button
                             type="submit"
-                            className={btnPrimary}
+                            className="px-8 py-3 rounded-xl font-bold bg-gradient-to-r from-green-600 to-green-700 text-white hover:scale-105 hover:shadow-lg transition-all duration-200 shadow-sm"
                             disabled={loading || saving}
                         >
                             {saving ? "Salvando..." : "Salvar alterações"}

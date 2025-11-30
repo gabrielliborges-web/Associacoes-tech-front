@@ -21,7 +21,9 @@ export async function getMinhaAssociacao() {
   return data;
 }
 
-export async function updateMinhaAssociacao(payload: Partial<Associacao>) {
+export async function updateMinhaAssociacao(
+  payload: Partial<Associacao> | FormData
+) {
   // Sempre envia como FormData para garantir upload de arquivo
   let formData: FormData;
   if (payload instanceof FormData) {
