@@ -306,18 +306,27 @@ export default function Mensalidades() {
 
             {viewMode === "mes" && (
                 <section>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {MONTH_NAMES.map((name, idx) => {
-                            const stat = statsByMonth[idx];
-                            const destaque = new Date().getMonth() === idx && new Date().getFullYear() === anoSelecionado;
-                            const total = stat.pagos + stat.abertos + stat.atrasados;
-                            const pctPago = total === 0 ? 0 : (stat.pagos / total) * 100;
-                            const color = pctPago >= 70 ? "bg-green-400" : pctPago >= 40 ? "bg-yellow-400" : "bg-red-400";
-                            return (
-                                <div key={name} onClick={() => setMesSelecionado(idx + 1)} className={`cursor-pointer rounded-2xl border p-4 ${destaque ? "ring-2 ring-primary-dark-7" : ""}`}>
+                    {/* Destaque: mês atual em destaque ocupando a largura */}
+                    {/* Collapsible: outros meses - aparece no início e aberto por padrão */}
+                    <CollapsibleMonths
+                        anosel={anoSelecionado}
+                        statsByMonth={statsByMonth}
+                        onSelectMonth={(m) => setMesSelecionado(m)}
+                    />
+
+                    {(() => {
+                        const currentIdx = new Date().getMonth();
+                        const stat = statsByMonth[currentIdx];
+                        const destaque = new Date().getFullYear() === anoSelecionado;
+                        const total = stat.pagos + stat.abertos + stat.atrasados;
+                        const pctPago = total === 0 ? 0 : (stat.pagos / total) * 100;
+                        const color = pctPago >= 70 ? "bg-green-400" : pctPago >= 40 ? "bg-yellow-400" : "bg-red-400";
+                        return (
+                            <div className="w-full mb-4">
+                                <div onClick={() => setMesSelecionado(currentIdx + 1)} className={`cursor-pointer rounded-2xl border p-4 ${destaque ? "ring-2 ring-primary-dark-7" : ""}`}>
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <div className="text-sm font-semibold">{name}</div>
+                                            <div className="text-sm font-semibold">{MONTH_NAMES[currentIdx]}</div>
                                             <div className="text-xs text-gray-500">{anoSelecionado}</div>
                                         </div>
                                         {destaque && <div className="text-xs text-white bg-primary-dark-9 px-2 py-1 rounded">Mês atual</div>}
@@ -331,9 +340,9 @@ export default function Mensalidades() {
                                         <div className={`${color} h-2`} style={{ width: `${pctPago}%` }} />
                                     </div>
                                 </div>
-                            );
-                        })}
-                    </div>
+                            </div>
+                        );
+                    })()}
 
                     {mesSelecionado && (
                         <div className="mt-6">
@@ -648,4 +657,51 @@ function ConfigForm({ onCancel, onSave, loading }: {
 // renderizado no topo do componente via estado `showConfigModal`
 // Aqui usamos mensalidadesApi.upsertConfig através de handleSaveConfig
 // showConfigModal é controlado no componente principal
+
+function CollapsibleMonths({ anosel, statsByMonth, onSelectMonth }: { anosel: number; statsByMonth: { pagos: number; abertos: number; atrasados: number }[]; onSelectMonth: (m: number) => void }) {
+    const [open, setOpen] = useState(true);
+    const { isDark } = useTheme();
+    const currentIdx = new Date().getMonth();
+
+    const others = MONTH_NAMES.map((name, idx) => ({ name, idx })).filter((it) => it.idx !== currentIdx);
+
+    return (
+        <div className="w-full mb-4">
+            <div className="flex items-center justify-between">
+                <div />
+                <button onClick={() => setOpen((s) => !s)} className={`text-sm ${isDark ? 'text-white/80' : 'text-primary-dark-9'}`}>
+                    {open ? 'Ocultar meses' : 'Ver todos meses'}
+                </button>
+            </div>
+            {open && (
+                <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {others.map(({ name, idx }) => {
+                        const stat = statsByMonth[idx];
+                        const total = stat.pagos + stat.abertos + stat.atrasados;
+                        const pctPago = total === 0 ? 0 : (stat.pagos / total) * 100;
+                        const color = pctPago >= 70 ? 'bg-green-400' : pctPago >= 40 ? 'bg-yellow-400' : 'bg-red-400';
+                        return (
+                            <div key={name} onClick={() => { onSelectMonth(idx + 1); }} className={`cursor-pointer rounded-2xl border p-4`}>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <div className="text-sm font-semibold">{name}</div>
+                                        <div className="text-xs text-gray-500">{anosel}</div>
+                                    </div>
+                                </div>
+                                <div className="mt-3 text-sm">
+                                    <div>Pagos: <strong>{stat.pagos}</strong></div>
+                                    <div>Em aberto: <strong>{stat.abertos}</strong></div>
+                                    <div>Atrasados: <strong>{stat.atrasados}</strong></div>
+                                </div>
+                                <div className="h-2 rounded-full mt-3 bg-white/10 overflow-hidden">
+                                    <div className={`${color} h-2`} style={{ width: `${pctPago}%` }} />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}
 
