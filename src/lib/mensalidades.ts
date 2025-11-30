@@ -36,6 +36,11 @@ export const mensalidadesApi = {
     return res.data;
   },
 
+  getMensalidadesAssociacao: async (ano: number) => {
+    const res = await api.get(`/financeiro/mensalidades/associacao?ano=${ano}`);
+    return res.data as Mensalidade[];
+  },
+
   getConfig: async () => {
     const res = await api.get(`/financeiro/mensalidades/config`);
     return res.data;

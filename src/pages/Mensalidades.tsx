@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { mensalidadesApi } from "../lib/mensalidades";
 import type { Mensalidade } from "../lib/mensalidades";
 import { useAuth } from "../context/AuthContext";
@@ -113,12 +113,9 @@ export default function Mensalidades() {
         setLoading(true);
         try {
             if (isManager) {
-                // para cada associado buscar suas mensalidades e combinar
-                const users = associados.length ? associados : [];
-                const promises = users.map((u) => mensalidadesApi.getMensalidadesUsuario(u.id, ano));
-                const resultados = await Promise.all(promises);
-                const flat = resultados.flat();
-                setMensalidades(flat);
+                // administrador: buscar todas as mensalidades da associação (mais eficiente)
+                const data = await mensalidadesApi.getMensalidadesAssociacao(ano);
+                setMensalidades(data);
             } else {
                 // associado comum: só o próprio
                 const data = await mensalidadesApi.getMinhasMensalidades(ano);
@@ -126,6 +123,13 @@ export default function Mensalidades() {
             }
         } catch (err: any) {
             console.error(err);
+            // Se o erro for devido à falta de configuração, abrir modal de configuração
+            const msg = err?.response?.data?.error || err?.message || "";
+            const lower = String(msg).toLowerCase();
+            if (lower.includes("configura") || lower.includes("mensalidade não encontrada") || lower.includes("configuração")) {
+                setShowConfigModal(true);
+                return;
+            }
             toast.error(err?.message || "Erro ao carregar mensalidades");
         } finally {
             setLoading(false);
@@ -372,7 +376,7 @@ export default function Mensalidades() {
                                             mensalidadesDoMes.map((m) => (
                                                 <tr key={m.id} className="border-t">
                                                     <td className="p-2">{(m as any).usuario?.nome || (m as any).usuario?.apelido || `Usuário ${m.usuarioId}`}</td>
-                                                    <td className="p-2">R$ {(m.valor || 0).toFixed(2)}</td>
+                                                    <td className="p-2">R$ {Number(m.valor || 0).toFixed(2)}</td>
                                                     <td className="p-2">
                                                         <span className={`px-2 py-1 rounded text-xs ${m.status === "PAGA" ? "bg-green-100 text-green-800" : m.status === "ABERTA" ? "bg-yellow-100 text-yellow-800" : m.status === "ATRASADA" ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-700"}`}>
                                                             {m.status}
@@ -479,7 +483,7 @@ export default function Mensalidades() {
                                                 <tr key={m.id} className="border-t">
                                                     <td className="p-2">{MONTH_NAMES[m.mes - 1]}</td>
                                                     <td className="p-2">{format(new Date(m.vencimento), 'dd/MM/yyyy')}</td>
-                                                    <td className="p-2">R$ {(m.valor || 0).toFixed(2)}</td>
+                                                    <td className="p-2">R$ {Number(m.valor || 0).toFixed(2)}</td>
                                                     <td className="p-2"><span className={`px-2 py-1 rounded text-xs ${m.status === "PAGA" ? "bg-green-100 text-green-800" : m.status === "ABERTA" ? "bg-yellow-100 text-yellow-800" : m.status === "ATRASADA" ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-700"}`}>{m.status}</span></td>
                                                     <td className="p-2">{m.dataPagamento ? format(new Date(m.dataPagamento), 'dd/MM/yyyy') : '-'}</td>
                                                     <td className="p-2">{m.formaPagamento || '-'}</td>
@@ -516,7 +520,7 @@ export default function Mensalidades() {
                                 </div>
                                 <div>
                                     <label className="text-sm text-gray-600">Valor</label>
-                                    <div>R$ {(mensalidadeSelecionada.valor || 0).toFixed(2)}</div>
+                                    <div>R$ {Number(mensalidadeSelecionada.valor || 0).toFixed(2)}</div>
                                 </div>
                             </div>
 
@@ -559,7 +563,7 @@ function PagamentoForm({ mensalidade, onCancel, onSave, loading }: {
 }) {
     const [dataPagamento, setDataPagamento] = useState<string>(new Date().toISOString().slice(0, 10));
     const [formaPagamento, setFormaPagamento] = useState<string>("PIX");
-    const [comprovanteUrl, setComprovanteUrl] = useState<string>(mensalidade.comprovanteUrl || "");
+    // const [comprovanteUrl, setComprovanteUrl] = useState<string>(mensalidade.comprovanteUrl || "");
     const [observacoes, setObservacoes] = useState<string>(mensalidade.observacoes || "");
     const { isDark } = useTheme();
 
@@ -586,11 +590,11 @@ function PagamentoForm({ mensalidade, onCancel, onSave, loading }: {
                     <option>OUTRO</option>
                 </select>
             </div>
-
+            {/* 
             <div>
                 <label className="block text-sm text-gray-600">URL do comprovante</label>
                 <input value={comprovanteUrl} onChange={(e) => setComprovanteUrl(e.target.value)} placeholder="https://..." className={inputClass} />
-            </div>
+            </div> */}
 
             <div>
                 <label className="block text-sm text-gray-600">Observações</label>
@@ -599,7 +603,7 @@ function PagamentoForm({ mensalidade, onCancel, onSave, loading }: {
 
             <div className="flex items-center justify-end gap-2">
                 <button onClick={onCancel} className={`rounded border px-3 py-2 ${isDark ? 'border-white/10 text-white' : ''}`}>Cancelar</button>
-                <button onClick={() => onSave({ dataPagamento, formaPagamento, comprovanteUrl: comprovanteUrl || undefined, observacoes: observacoes || undefined })} disabled={loading} className="rounded bg-primary-dark-9 px-3 py-2 text-white">{loading ? 'Salvando...' : 'Salvar'}</button>
+                <button onClick={() => onSave({ dataPagamento, formaPagamento, comprovanteUrl: undefined, observacoes: observacoes || undefined })} disabled={loading} className="rounded bg-primary-dark-9 px-3 py-2 text-white">{loading ? 'Salvando...' : 'Salvar'}</button>
             </div>
         </div>
     );
