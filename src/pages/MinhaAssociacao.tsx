@@ -89,7 +89,46 @@ export default function MinhaAssociacao() {
 
             {/* Display ou Edit */}
             {!editMode ? (
-                <AssociationDisplay associacao={dados as Partial<Associacao>} onEdit={() => setEditMode(true)} />
+                <div className="w-full max-w-4xl mx-auto p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Perfil / imagem e dados */}
+                        <div className="bg-white dark:bg-neutral-900 border border-green-200 dark:border-green-800 rounded-2xl p-6 shadow-md">
+                            <div className="flex flex-col items-center text-center">
+                                <div className="w-28 h-28 rounded-full overflow-hidden bg-green-100 dark:bg-green-900 flex items-center justify-center border-2 border-green-300 dark:border-green-700">
+                                    {dados.logoUrl ? (
+                                        // logoUrl pode ser string vazia
+                                        <img src={dados.logoUrl} alt={dados.nome} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-3xl font-bold text-green-600">{(dados.nome || "").charAt(0)}</span>
+                                    )}
+                                </div>
+                                <h2 className="mt-4 text-2xl font-bold text-gray-900 dark:text-gray-100">{dados.nome} {dados.apelido ? <span className="text-sm text-green-600 dark:text-green-300">({dados.apelido})</span> : null}</h2>
+                                <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">{dados.cidade}{dados.estado ? ` · ${dados.estado}` : ''}</div>
+                                <div className="mt-3 flex items-center gap-4 text-sm text-gray-700 dark:text-gray-300">
+                                    <div className="px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                        <div className="text-xs text-gray-500">Horário</div>
+                                        <div className="font-medium">{dados.horarioPadraoInicio || '--'} - {dados.horarioPadraoFim || '--'}</div>
+                                    </div>
+                                    <div className="px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                        <div className="text-xs text-gray-500">Tipo</div>
+                                        <div className="font-medium">{dados.tipoJogoPadrao || '-'}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-6">
+                                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Descrição / Sobre</h3>
+                                <p className="mt-2 text-gray-600 dark:text-gray-300 whitespace-pre-line">{dados.descricao || 'Ainda não há descrição.'}</p>
+                            </div>
+                        </div>
+
+                        {/* Regras */}
+                        <div className="bg-white dark:bg-neutral-900 border border-green-200 dark:border-green-800 rounded-2xl p-6 shadow-md">
+                            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Regras internas</h3>
+                            <p className="mt-3 text-gray-600 dark:text-gray-300 whitespace-pre-line">{dados.regrasInternas || 'Nenhuma regra definida.'}</p>
+                        </div>
+                    </div>
+                </div>
             ) : (
                 <form onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto flex flex-col gap-8 p-2 md:p-6">
                     <h2 className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">Editar Associação</h2>

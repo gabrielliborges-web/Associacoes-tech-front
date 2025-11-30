@@ -36,7 +36,7 @@ export default function AssociationDisplay({ associacao, onEdit }: Props) {
 
                     {/* Profile Info */}
                     <div className="flex-1 space-y-4">
-                        {/* Name and Edit Button */}
+                        {/* Name and Edit Button + quick details (horário / tipo) */}
                         <div className="flex items-start justify-between gap-4">
                             <div>
                                 <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{nome || "Minha Associação"}</h2>
@@ -47,6 +47,11 @@ export default function AssociationDisplay({ associacao, onEdit }: Props) {
                                     </svg>
                                     {cidade ? `${cidade}${estado ? `, ${estado}` : ""}` : "Localização não informada"}
                                 </p>
+
+                                <div className="mt-3 flex flex-wrap items-center gap-3">
+                                    <div className="text-sm text-gray-600 dark:text-gray-400">Horário: <span className="font-medium text-gray-900 dark:text-gray-100 ml-1">{horarioPadraoInicio || "--"} — {horarioPadraoFim || "--"}</span></div>
+                                    <div className="text-sm">Tipo: <span className="ml-1 inline-block text-sm font-medium text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900 px-2 py-1 rounded-full">{tipoJogoPadrao || "BABA"}</span></div>
+                                </div>
                             </div>
                             <button
                                 onClick={onEdit}
@@ -60,51 +65,26 @@ export default function AssociationDisplay({ associacao, onEdit }: Props) {
                             </button>
                         </div>
 
-                        {/* Description */}
+                        {/* Description below profile */}
                         {descricao && (
                             <p className="text-gray-700 dark:text-gray-300 text-lg leading-relaxed border-l-4 border-green-500 pl-4">
                                 {descricao}
                             </p>
                         )}
+                    </div>
+                </div>
 
-                        {/* Details */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                            {/* Regras */}
-                            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
-                                <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
-                                    <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                                    </svg>
-                                    Regras Internas
-                                </h3>
-                                <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
-                                    {regrasInternas || <span className="italic text-gray-400">Nenhuma regra definida</span>}
-                                </div>
-                            </div>
-
-                            {/* Configurações */}
-                            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
-                                <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
-                                    <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                                    </svg>
-                                    Configurações
-                                </h3>
-                                <div className="space-y-2">
-                                    <div>
-                                        <span className="text-sm text-gray-600 dark:text-gray-400">Horário padrão:</span>
-                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100 ml-2">
-                                            {horarioPadraoInicio || "--"} — {horarioPadraoFim || "--"}
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <span className="text-sm text-gray-600 dark:text-gray-400">Tipo de jogo:</span>
-                                        <span className="text-sm font-medium text-green-700 dark:text-green-300 ml-2 bg-green-100 dark:bg-green-900 px-2 py-1 rounded-full">
-                                            {tipoJogoPadrao || "BABA"}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
+                {/* Regras: seção única abaixo (não lado a lado) */}
+                <div className="mt-6">
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
+                        <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
+                            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                            </svg>
+                            Regras Internas
+                        </h3>
+                        <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                            {regrasInternas || <span className="italic text-gray-400">Nenhuma regra definida</span>}
                         </div>
                     </div>
                 </div>

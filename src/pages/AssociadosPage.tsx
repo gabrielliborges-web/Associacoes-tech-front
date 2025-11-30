@@ -14,9 +14,9 @@ function AssociadoCard({ associado, onEdit, onDeactivate, onDeletePermanent, onA
     onActivate: (id: number) => void;
 }) {
     return (
-        <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-md p-4 flex items-center gap-4 border border-green-200 dark:border-green-800">
-            <div className="flex-shrink-0">
-                <div className="w-16 h-16 rounded-full overflow-hidden bg-green-100 dark:bg-green-900 flex items-center justify-center border-2 border-green-300 dark:border-green-700">
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-md p-4 border border-green-200 dark:border-green-800 flex flex-col h-full">
+            <div className="w-full flex justify-center mb-3">
+                <div className="w-20 h-20 rounded-full overflow-hidden bg-green-100 dark:bg-green-900 flex items-center justify-center border-2 border-green-300 dark:border-green-700">
                     {associado.avatarUrl ? (
                         <img src={associado.avatarUrl} alt={associado.nome} className="w-full h-full object-cover" />
                     ) : (
@@ -24,31 +24,34 @@ function AssociadoCard({ associado, onEdit, onDeactivate, onDeletePermanent, onA
                     )}
                 </div>
             </div>
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                    <span className="font-bold text-lg text-green-900 dark:text-green-200">{associado.nome}</span>
-                    {associado.apelido && <span className="text-green-600 dark:text-green-300 text-sm">({associado.apelido})</span>}
-                    <span className={`ml-2 px-2 py-1 rounded-full text-xs ${associado.ativo ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>{associado.ativo ? "Ativo" : "Inativo"}</span>
+
+            <div className="flex-1 flex flex-col">
+                <div className="text-center">
+                    <div className="font-bold text-lg text-green-900 dark:text-green-200">{associado.nome} {associado.apelido ? <span className="text-green-600 dark:text-green-300 text-sm">({associado.apelido})</span> : null}</div>
+                    <div className={`inline-block mt-2 px-2 py-1 rounded-full text-xs ${associado.ativo ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>{associado.ativo ? "Ativo" : "Inativo"}</div>
                 </div>
-                <div className="flex flex-wrap gap-4 mt-1 text-sm text-gray-600 dark:text-gray-300">
-                    <span>Nº Camisa: <b>{associado.numeroCamisaPadrao || "-"}</b></span>
-                    <span>Posição: <b>{associado.posicaoPreferida || "-"}</b></span>
-                    <span>Perna: <b>{associado.pernaDominante || "-"}</b></span>
-                    <span>Telefone: <b>{associado.telefone || "-"}</b></span>
+
+                <div className="mt-3 text-sm text-gray-600 dark:text-gray-300 text-center">{associado.observacoes || associado.email || "-"}</div>
+
+                <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-300">
+                    <div>Nº Camisa: <b className="text-gray-800 dark:text-gray-100">{associado.numeroCamisaPadrao || "-"}</b></div>
+                    <div>Posição: <b className="text-gray-800 dark:text-gray-100">{associado.posicaoPreferida || "-"}</b></div>
+                    <div>Perna: <b className="text-gray-800 dark:text-gray-100">{associado.pernaDominante || "-"}</b></div>
+                    <div>Telefone: <b className="text-gray-800 dark:text-gray-100">{associado.telefone || "-"}</b></div>
                 </div>
-                <div className="mt-1 text-xs text-gray-400 truncate">{associado.email}</div>
             </div>
-            <div className="flex flex-col gap-2">
-                <button onClick={() => onEdit(associado)} className="px-3 py-1 rounded-lg bg-green-600 text-white text-xs hover:bg-green-700">Editar</button>
+
+            <div className="mt-4 flex gap-2 justify-center">
+                <button onClick={() => onEdit(associado)} className="px-3 py-1 rounded-lg bg-green-600 text-white text-sm hover:bg-green-700">Editar</button>
                 {associado.ativo ? (
                     <>
-                        <button onClick={() => onDeactivate(associado.id)} className="px-3 py-1 rounded-lg bg-red-500 text-white text-xs hover:bg-red-600">Desativar</button>
-                        <button onClick={() => onDeletePermanent(associado.id)} className="px-3 py-1 rounded-lg bg-red-800 text-white text-xs hover:bg-red-900">Excluir</button>
+                        <button onClick={() => onDeactivate(associado.id)} className="px-3 py-1 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600">Desativar</button>
+                        <button onClick={() => onDeletePermanent(associado.id)} className="px-3 py-1 rounded-lg bg-red-800 text-white text-sm hover:bg-red-900">Excluir</button>
                     </>
                 ) : (
                     <>
-                        <button onClick={() => onActivate(associado.id)} className="px-3 py-1 rounded-lg bg-green-500 text-white text-xs hover:bg-green-600">Ativar</button>
-                        <button onClick={() => onDeletePermanent(associado.id)} className="px-3 py-1 rounded-lg bg-red-800 text-white text-xs hover:bg-red-900">Excluir</button>
+                        <button onClick={() => onActivate(associado.id)} className="px-3 py-1 rounded-lg bg-green-500 text-white text-sm hover:bg-green-600">Ativar</button>
+                        <button onClick={() => onDeletePermanent(associado.id)} className="px-3 py-1 rounded-lg bg-red-800 text-white text-sm hover:bg-red-900">Excluir</button>
                     </>
                 )}
             </div>
@@ -236,16 +239,77 @@ const AssociadosPage: React.FC = () => {
         }
     }
 
-    // activation will be performed after confirmation modal
+    // filtros
+    const [search, setSearch] = useState("");
+    const [positionFilter, setPositionFilter] = useState<string>("");
+    const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+
+    const filteredAssociados = associados.filter((a) => {
+        if (search && !a.nome.toLowerCase().includes(search.toLowerCase())) return false;
+        if (positionFilter && a.posicaoPreferida !== positionFilter) return false;
+        if (statusFilter === "active" && !a.ativo) return false;
+        if (statusFilter === "inactive" && a.ativo) return false;
+        return true;
+    });
+
+    const dashboard = associados.reduce((acc: Record<string, number>, a) => {
+        const pos = a.posicaoPreferida || "OUTROS";
+        acc[pos] = (acc[pos] || 0) + 1;
+        acc["TOTAL"] = (acc["TOTAL"] || 0) + 1;
+        acc["ATIVOS"] = (acc["ATIVOS"] || 0) + (a.ativo ? 1 : 0);
+        acc["INATIVOS"] = (acc["INATIVOS"] || 0) + (a.ativo ? 0 : 1);
+        return acc;
+    }, {} as Record<string, number>);
+
     return (
-        <div className="space-y-6 max-w-3xl mx-auto">
-            <header className="flex items-center justify-between">
-                <div>
+        <div className="space-y-6 max-w-5xl mx-auto">
+            <header className="grid gap-4 md:grid-cols-3 md:items-start">
+                <div className="md:col-span-2">
                     <h1 className="text-2xl font-bold text-green-700">Associados</h1>
                     <p className="text-sm text-gray-500">Gerencie os associados da associação</p>
                 </div>
-                <div>
+                <div className="flex justify-end md:justify-end">
                     <button onClick={() => { setShowForm(true); setEditData(null); }} className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700">Novo Associado</button>
+                </div>
+                {/* mini dashboard */}
+                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div className="bg-white dark:bg-neutral-900 p-4 rounded-lg shadow flex flex-col">
+                        <span className="text-sm text-gray-500">Total</span>
+                        <span className="text-2xl font-bold">{dashboard["TOTAL"] || 0}</span>
+                    </div>
+                    <div className="bg-white dark:bg-neutral-900 p-4 rounded-lg shadow flex flex-col">
+                        <span className="text-sm text-gray-500">Ativos</span>
+                        <span className="text-2xl font-bold text-green-700">{dashboard["ATIVOS"] || 0}</span>
+                    </div>
+                    <div className="bg-white dark:bg-neutral-900 p-4 rounded-lg shadow flex flex-col">
+                        <span className="text-sm text-gray-500">Inativos</span>
+                        <span className="text-2xl font-bold text-red-600">{dashboard["INATIVOS"] || 0}</span>
+                    </div>
+                    <div className="bg-white dark:bg-neutral-900 p-4 rounded-lg shadow overflow-auto">
+                        <span className="text-sm text-gray-500">Por posição</span>
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                            {Object.keys(dashboard).filter(k => !["TOTAL", "ATIVOS", "INATIVOS"].includes(k)).map((pos) => (
+                                <div key={pos} className="flex items-center justify-between">
+                                    <span className="text-gray-700">{pos}</span>
+                                    <span className="font-bold">{dashboard[pos]}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+                {/* filtros */}
+                <div className="md:col-span-3 bg-white dark:bg-neutral-900 p-4 rounded-lg shadow flex flex-wrap gap-3 items-center">
+                    <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome" className="p-2 rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 flex-1" />
+                    <select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} className="p-2 rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100">
+                        <option value="">Todas posições</option>
+                        {posicoes.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="p-2 rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100">
+                        <option value="all">Todos</option>
+                        <option value="active">Ativos</option>
+                        <option value="inactive">Inativos</option>
+                    </select>
+                    <button onClick={() => { setSearch(""); setPositionFilter(""); setStatusFilter("all"); }} className="px-3 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800">Limpar</button>
                 </div>
             </header>
 
@@ -258,14 +322,14 @@ const AssociadosPage: React.FC = () => {
                 />
             )}
 
-            <div className="grid gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {loading ? (
                     <div className="text-center text-gray-400">Carregando...</div>
                 ) : (
-                    associados.length === 0 ? (
-                        <div className="text-center text-gray-400">Nenhum associado cadastrado.</div>
+                    filteredAssociados.length === 0 ? (
+                        <div className="text-center text-gray-400">Nenhum associado encontrado.</div>
                     ) : (
-                        associados.map((a) => (
+                        filteredAssociados.map((a) => (
                             <AssociadoCard
                                 key={a.id}
                                 associado={a}
