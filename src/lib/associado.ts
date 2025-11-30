@@ -46,7 +46,7 @@ export interface UpdateAssociadoData extends Partial<CreateAssociadoData> {}
 export const associadoApi = {
   // Listar associados da associação
   listAssociados: async (associacaoId: number): Promise<Associado[]> => {
-    const response = await api.get(`/associacoes/${associacaoId}/associados`);
+    const response = await api.get(`/associados/${associacaoId}/associados`);
     return response.data;
   },
 
@@ -59,21 +59,21 @@ export const associadoApi = {
   // Criar novo associado
   createAssociado: async (
     associacaoId: number,
-    data: CreateAssociadoData
+    data: FormData
   ): Promise<Associado> => {
     const response = await api.post(
-      `/associacoes/${associacaoId}/associados`,
-      data
+      `/associados/${associacaoId}/associados`,
+      data,
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
     return response.data;
   },
 
   // Atualizar associado
-  updateAssociado: async (
-    id: number,
-    data: UpdateAssociadoData
-  ): Promise<Associado> => {
-    const response = await api.patch(`/associados/${id}`, data);
+  updateAssociado: async (id: number, data: FormData): Promise<Associado> => {
+    const response = await api.patch(`/associados/associados/${id}`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return response.data;
   },
 

@@ -46,7 +46,7 @@ function AssociadoCard({ associado, onEdit, onDelete }: {
 
 function AssociadoForm({ associacaoId, onSave, initial, onCancel }: {
     associacaoId: number;
-    onSave: (data: CreateAssociadoData | UpdateAssociadoData, id?: number) => void;
+    onSave: (data: FormData, id?: number) => void;
     initial?: Partial<Associado>;
     onCancel: () => void;
 }) {
@@ -76,17 +76,28 @@ function AssociadoForm({ associacaoId, onSave, initial, onCancel }: {
         observacoes: ""
     });
     const [saving, setSaving] = useState(false);
+    const [fotoFile, setFotoFile] = useState<File | null>(null);
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
         const { name, value, type } = e.target;
-        setForm((prev) => ({ ...prev, [name]: type === "number" ? Number(value) : value }));
+        if (type === "file") {
+            const file = (e.target as HTMLInputElement).files?.[0] || null;
+            setFotoFile(file);
+        } else {
+            setForm((prev) => ({ ...prev, [name]: type === "number" ? Number(value) : value }));
+        }
     }
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setSaving(true);
         try {
-            await onSave(form, initial?.id);
+            const formData = new FormData();
+            Object.entries(form).forEach(([key, value]) => {
+                if (value !== undefined && value !== "") formData.append(key, value as any);
+            });
+            if (fotoFile) formData.append("foto", fotoFile);
+            await onSave(formData, initial?.id);
         } finally {
             setSaving(false);
         }
@@ -102,6 +113,7 @@ function AssociadoForm({ associacaoId, onSave, initial, onCancel }: {
                     <input name="email" value={form.email} onChange={handleChange} required type="email" placeholder="E-mail" className="rounded-lg border-green-300 dark:border-green-700 p-2 bg-white dark:bg-neutral-800" />
                     <input name="telefone" value={form.telefone} onChange={handleChange} placeholder="Telefone" className="rounded-lg border-green-300 dark:border-green-700 p-2 bg-white dark:bg-neutral-800" />
                     <input name="numeroCamisaPadrao" value={form.numeroCamisaPadrao ?? ""} onChange={handleChange} type="number" placeholder="Nº Camisa" className="rounded-lg border-green-300 dark:border-green-700 p-2 bg-white dark:bg-neutral-800" />
+                    <input type="file" accept="image/*" name="foto" onChange={handleChange} className="rounded-lg border-green-300 dark:border-green-700 p-2 bg-white dark:bg-neutral-800" />
                 </div>
                 <div className="flex flex-col gap-2">
                     <select name="posicaoPreferida" value={form.posicaoPreferida ?? ""} onChange={handleChange} className="rounded-lg border-green-300 dark:border-green-700 p-2 bg-white dark:bg-neutral-800">
@@ -130,6 +142,7 @@ const AssociadosPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editData, setEditData] = useState<Associado | null>(null);
+    const [confirmId, setConfirmId] = useState<number | null>(null);
 
     async function fetchAssociados() {
         if (!associacao?.id) return;
@@ -150,48 +163,49 @@ const AssociadosPage: React.FC = () => {
         // eslint-disable-next-line
     }, [associacao?.id]);
 
-    async function handleSave(data: CreateAssociadoData | UpdateAssociadoData, id?: number) {
+    async function handleSave(data: FormData, id?: number) {
         try {
             if (id) {
                 await associadoApi.updateAssociado(id, data);
                 toast.success("Associado atualizado!");
             } else {
-                await associadoApi.createAssociado(associacao!.id, data as CreateAssociadoData);
+                await associadoApi.createAssociado(associacao!.id, data);
                 toast.success("Associado criado!");
             }
             setShowForm(false);
             setEditData(null);
             fetchAssociados();
         } catch (err: any) {
+            debugger
             toast.error(err?.response?.data?.error || "Erro ao salvar associado");
         }
     }
 
     async function handleDelete(id: number) {
-        if (!window.confirm("Deseja realmente desativar este associado?")) return;
-        try {
-            await associadoApi.deactivateAssociado(id);
-            toast.success("Associado desativado!");
-            fetchAssociados();
-        } catch (err: any) {
-            toast.error(err?.response?.data?.error || "Erro ao desativar associado");
-        }
+        setConfirmId(id);
     }
 
+    async function confirmDelete() {
+        if (!confirmId) return;
+        try {
+            await associadoApi.deactivateAssociado(confirmId);
+            toast.success("Associado desativado!");
+            setAssociados((prev) => prev.map(a => a.id === confirmId ? { ...a, ativo: false } : a));
+        } catch (err: any) {
+            toast.error(err?.response?.data?.error || "Erro ao desativar associado");
+        } finally {
+            setConfirmId(null);
+        }
+    }
     return (
         <div className="space-y-6 max-w-3xl mx-auto">
             <header className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-green-700 dark:text-green-300">Associados</h1>
-                    <p className="text-sm text-muted-foreground">Gerencie os jogadores e membros da sua associação</p>
+                    <h1 className="text-2xl font-bold text-green-700">Associados</h1>
+                    <p className="text-sm text-gray-500">Gerencie os associados da associação</p>
                 </div>
                 <div>
-                    <button
-                        className="rounded-lg bg-green-600 hover:bg-green-700 px-5 py-2 text-white font-bold shadow-md"
-                        onClick={() => { setShowForm(true); setEditData(null); }}
-                    >
-                        Novo Associado
-                    </button>
+                    <button onClick={() => { setShowForm(true); setEditData(null); }} className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700">Novo Associado</button>
                 </div>
             </header>
 
@@ -215,13 +229,26 @@ const AssociadosPage: React.FC = () => {
                             <AssociadoCard
                                 key={a.id}
                                 associado={a}
-                                onEdit={(a) => { setEditData(a); setShowForm(true); }}
+                                onEdit={(ass) => { setEditData(ass); setShowForm(true); }}
                                 onDelete={handleDelete}
                             />
                         ))
                     )
                 )}
             </div>
+
+            {confirmId !== null && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+                    <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-lg p-8 max-w-sm w-full flex flex-col items-center">
+                        <h2 className="text-lg font-bold mb-4 text-green-700 dark:text-green-300">Confirmar desativação</h2>
+                        <p className="mb-6 text-center">Deseja realmente desativar este associado?</p>
+                        <div className="flex gap-4">
+                            <button onClick={() => setConfirmId(null)} className="px-6 py-2 rounded-lg bg-neutral-100 text-gray-700 border border-neutral-300 hover:bg-neutral-200">Cancelar</button>
+                            <button onClick={confirmDelete} className="px-6 py-2 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700">Desativar</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
