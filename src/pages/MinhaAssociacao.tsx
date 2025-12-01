@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { getMinhaAssociacao, updateMinhaAssociacao } from "../lib/associacao";
-import AssociationDisplay from "../components/associacao/AssociationDisplay";
-import type { Associacao } from "../lib/associacao";
 
 const TIPO_JOGO_OPCOES = [
     { value: "BABA", label: "Baba" },
@@ -10,6 +8,10 @@ const TIPO_JOGO_OPCOES = [
     { value: "CAMPEONATO", label: "Campeonato" },
     { value: "TREINO", label: "Treino" },
 ];
+
+const getTipoJogoLabel = (tipo?: string) => {
+    return TIPO_JOGO_OPCOES.find((opt) => opt.value === tipo)?.label || tipo || "-";
+};
 
 export default function MinhaAssociacao() {
     const [loading, setLoading] = useState(true);
@@ -26,6 +28,11 @@ export default function MinhaAssociacao() {
         horarioPadraoInicio: "",
         horarioPadraoFim: "",
         tipoJogoPadrao: "BABA",
+        ativa: true,
+        usuarios: [],
+        jogos: [],
+        galerias: [],
+        configMensalidade: null as any,
     });
     const [dadosOriginais, setDadosOriginais] = useState(dados);
 
@@ -51,18 +58,15 @@ export default function MinhaAssociacao() {
         try {
             const form = e.target as HTMLFormElement;
             const formData = new FormData(form);
-            // Garante que tipoJogoPadrao seja correto
             if (!["BABA", "AMISTOSO", "CAMPEONATO", "TREINO"].includes(formData.get("tipoJogoPadrao") as string)) {
                 formData.set("tipoJogoPadrao", "BABA");
             }
-            // Remove logoUrl se o file for enviado
             if (formData.get("logo") instanceof File && (formData.get("logo") as File).size > 0) {
                 formData.delete("logoUrl");
             }
             await updateMinhaAssociacao(formData);
             toast.success("Associação atualizada!");
             setEditMode(false);
-            // Atualiza dadosOriginais com resposta da API
             getMinhaAssociacao().then((data) => {
                 setDadosOriginais((prev) => ({ ...prev, ...data }));
                 setDados((prev) => ({ ...prev, ...data }));
@@ -79,215 +83,380 @@ export default function MinhaAssociacao() {
         setEditMode(false);
     }
 
-    // Header + card compacto
-    return (
-        <div className="max-w-4xl mx-auto p-4 animate-fade-in">
-            <div className="text-center mb-8">
-                <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Minha Associação</h1>
-                <p className="text-gray-500 dark:text-gray-400 text-lg">Gerencie os dados oficiais do seu baba</p>
+    if (loading) {
+        return (
+            <div className="w-full h-screen flex items-center justify-center">
+                <div className="text-center text-gray-400">Carregando dados da associação...</div>
             </div>
+        );
+    }
 
-            {/* Display ou Edit */}
-            {!editMode ? (
-                <div className="w-full max-w-4xl mx-auto p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Perfil / imagem e dados */}
-                        <div className="bg-white dark:bg-neutral-900 border border-green-200 dark:border-green-800 rounded-2xl p-6 shadow-md">
-                            <div className="flex flex-col items-center text-center">
-                                <div className="w-28 h-28 rounded-full overflow-hidden bg-green-100 dark:bg-green-900 flex items-center justify-center border-2 border-green-300 dark:border-green-700">
-                                    {dados.logoUrl ? (
-                                        // logoUrl pode ser string vazia
-                                        <img src={dados.logoUrl} alt={dados.nome} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="text-3xl font-bold text-green-600">{(dados.nome || "").charAt(0)}</span>
-                                    )}
-                                </div>
-                                <h2 className="mt-4 text-2xl font-bold text-gray-900 dark:text-gray-100">{dados.nome} {dados.apelido ? <span className="text-sm text-green-600 dark:text-green-300">({dados.apelido})</span> : null}</h2>
-                                <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">{dados.cidade}{dados.estado ? ` · ${dados.estado}` : ''}</div>
-                                <div className="mt-3 flex items-center gap-4 text-sm text-gray-700 dark:text-gray-300">
-                                    <div className="px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                        <div className="text-xs text-gray-500">Horário</div>
-                                        <div className="font-medium">{dados.horarioPadraoInicio || '--'} - {dados.horarioPadraoFim || '--'}</div>
-                                    </div>
-                                    <div className="px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                        <div className="text-xs text-gray-500">Tipo</div>
-                                        <div className="font-medium">{dados.tipoJogoPadrao || '-'}</div>
-                                    </div>
-                                </div>
-                            </div>
+    if (editMode) {
+        return <EditAssociationForm dados={dados} handleChange={handleChange} handleSubmit={handleSubmit} handleCancelEdit={handleCancelEdit} saving={saving} loading={loading} />;
+    }
 
-                            <div className="mt-6">
-                                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Descrição / Sobre</h3>
-                                <p className="mt-2 text-gray-600 dark:text-gray-300 whitespace-pre-line">{dados.descricao || 'Ainda não há descrição.'}</p>
-                            </div>
-                        </div>
+    return (
+        <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-900">
+            {/* Header / Profile Banner */}
+            <AssociationHeaderProfile dados={dados} onEdit={() => setEditMode(true)} />
 
-                        {/* Regras */}
-                        <div className="bg-white dark:bg-neutral-900 border border-green-200 dark:border-green-800 rounded-2xl p-6 shadow-md">
-                            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Regras internas</h3>
-                            <p className="mt-3 text-gray-600 dark:text-gray-300 whitespace-pre-line">{dados.regrasInternas || 'Nenhuma regra definida.'}</p>
-                        </div>
+            {/* Main Content */}
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Stats Cards */}
+                <AssociationStatsCards dados={dados} />
+
+                {/* Content Grid */}
+                <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Sobre + Regras (left) */}
+                    <div className="lg:col-span-2 space-y-6">
+                        <AssociationAboutCard descricao={dados.descricao} />
+                        <AssociationRulesCard regrasInternas={dados.regrasInternas} />
                     </div>
-                    <div className="mt-6 flex justify-end">
-                        <button
-                            type="button"
-                            onClick={() => setEditMode(true)}
-                            className="px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white hover:opacity-95 transition"
-                        >
-                            Editar associação
-                        </button>
+
+                    {/* Settings (right) */}
+                    <div>
+                        <AssociationSettingsCard dados={dados} />
                     </div>
                 </div>
+            </div>
+        </div>
+    );
+}
+
+/* ========================================
+   HEADER / PROFILE COMPONENT
+======================================== */
+function AssociationHeaderProfile({ dados, onEdit }: { dados: any; onEdit: () => void }) {
+    return (
+        <div className="relative w-full">
+            {/* Cover Image / Faixa */}
+            <div className="h-32 sm:h-40 relative"></div>
+
+            {/* Content overlay */}
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-16 sm:-mt-20 relative z-10 pb-6">
+                    {/* Logo + Info */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
+                        {/* Logo */}
+                        <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-white dark:bg-gray-800 border-4 border-white dark:border-gray-700 flex items-center justify-center overflow-hidden shadow-md flex-shrink-0">
+                            {dados.logoUrl ? (
+                                <img src={dados.logoUrl} alt={dados.nome} className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-4xl sm:text-5xl font-bold text-blue-600 dark:text-blue-300">
+                                    {(dados.nome || "").charAt(0).toUpperCase()}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 pb-1">
+                            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">{dados.nome}</h1>
+                            {dados.apelido && (
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    Também conhecido como: <span className="font-semibold">{dados.apelido}</span>
+                                </p>
+                            )}
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    {dados.cidade}
+                                    {dados.estado && ` · ${dados.estado}`}
+                                </span>
+                                <span className={`text-xs px-2 py-1 rounded-full font-semibold ${dados.ativa ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-100" : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"}`}>
+                                    {dados.ativa ? "Ativa" : "Inativa"}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Botão Editar */}
+                    <button
+                        onClick={onEdit}
+                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:opacity-90 transition whitespace-nowrap"
+                    >
+                        Editar associação
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ========================================
+   STATS CARDS COMPONENT
+======================================== */
+function AssociationStatsCards({ dados }: { dados: any }) {
+    const stats = [
+        { label: "Associados", value: dados.usuarios?.length || 0, icon: "👥" },
+        { label: "Jogos", value: dados.jogos?.length || 0, icon: "⚽" },
+        { label: "Álbuns", value: dados.galerias?.length || 0, icon: "📸" },
+    ];
+
+    return (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {stats.map((stat, idx) => (
+                <div key={idx} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex flex-col items-center text-center">
+                    <div className="text-3xl mb-2">{stat.icon}</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 font-medium uppercase tracking-wide">{stat.label}</div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+/* ========================================
+   ABOUT CARD COMPONENT
+======================================== */
+function AssociationAboutCard({ descricao }: { descricao?: string }) {
+    return (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Sobre a associação</h2>
+            <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                {descricao || (
+                    <span className="italic text-gray-400">
+                        Nenhuma descrição cadastrada ainda. Clique em editar para contar a história da sua associação.
+                    </span>
+                )}
+            </p>
+        </div>
+    );
+}
+
+/* ========================================
+   RULES CARD COMPONENT
+======================================== */
+function AssociationRulesCard({ regrasInternas }: { regrasInternas?: string }) {
+    return (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Regras internas</h2>
+            <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                {regrasInternas || (
+                    <span className="italic text-gray-400">
+                        Nenhuma regra interna cadastrada. Adicione as regras do baba para organizar a casa.
+                    </span>
+                )}
+            </p>
+        </div>
+    );
+}
+
+/* ========================================
+   SETTINGS CARD COMPONENT
+======================================== */
+function AssociationSettingsCard({ dados }: { dados: any }) {
+    return (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 space-y-4">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Configurações do baba</h2>
+
+            {/* Tipo de Jogo */}
+            <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+                <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 font-semibold mb-1">Tipo de jogo padrão</p>
+                <p className="text-base font-semibold text-gray-900 dark:text-gray-100">{getTipoJogoLabel(dados.tipoJogoPadrao)}</p>
+            </div>
+
+            {/* Horário */}
+            <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+                <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 font-semibold mb-1">Horário padrão</p>
+                {dados.horarioPadraoInicio && dados.horarioPadraoFim ? (
+                    <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                        {dados.horarioPadraoInicio} às {dados.horarioPadraoFim}
+                    </p>
+                ) : (
+                    <p className="text-base text-gray-400 italic">Não configurado</p>
+                )}
+            </div>
+
+            {/* Mensalidade */}
+            {dados.configMensalidade ? (
+                <>
+                    <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+                        <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 font-semibold mb-1">Valor mensalidade</p>
+                        <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                            R$ {Number(dados.configMensalidade.valorPadrao || 0).toFixed(2)}
+                        </p>
+                    </div>
+                    <div>
+                        <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 font-semibold mb-1">Dia de vencimento</p>
+                        <p className="text-base font-semibold text-gray-900 dark:text-gray-100">Dia {dados.configMensalidade.diaVencimento}</p>
+                    </div>
+                </>
             ) : (
-                <form onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto flex flex-col gap-8 p-2 md:p-6">
-                    <h2 className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">Editar Associação</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="flex flex-col gap-6">
-                            <div>
-                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Nome</label>
-                                <input
-                                    type="text"
-                                    name="nome"
-                                    value={dados.nome}
-                                    onChange={handleChange}
-                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
-                                    required
-                                    disabled={loading || saving}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Apelido</label>
-                                <input
-                                    type="text"
-                                    name="apelido"
-                                    value={dados.apelido}
-                                    onChange={handleChange}
-                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
-                                    disabled={loading || saving}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Descrição / Sobre</label>
-                                <textarea
-                                    name="descricao"
-                                    value={dados.descricao}
-                                    onChange={handleChange}
-                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg min-h-[80px] focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
-                                    placeholder="Sobre a associação"
-                                    disabled={loading || saving}
-                                />
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-6">
-                            <div>
-                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Cidade</label>
-                                <input
-                                    type="text"
-                                    name="cidade"
-                                    value={dados.cidade}
-                                    onChange={handleChange}
-                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
-                                    disabled={loading || saving}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Estado</label>
-                                <input
-                                    type="text"
-                                    name="estado"
-                                    value={dados.estado}
-                                    onChange={handleChange}
-                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
-                                    disabled={loading || saving}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Logo</label>
-                                <input
-                                    type="file"
-                                    name="logo"
-                                    accept="image/*"
-                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg file:mr-2 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-green-600 file:text-white file:font-bold file:cursor-pointer shadow-sm"
-                                    disabled={loading || saving}
-                                />
-                                {dados.logoUrl && (
-                                    <img src={dados.logoUrl} alt="Logo" className="w-16 h-16 rounded-full border-2 border-green-500 mt-2 shadow-md" />
-                                )}
-                            </div>
-                        </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400 italic">
+                    Mensalidade não configurada. Configure na seção de Mensalidades.
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ========================================
+   EDIT FORM COMPONENT
+======================================== */
+function EditAssociationForm({
+    dados,
+    handleChange,
+    handleSubmit,
+    handleCancelEdit,
+    saving,
+    loading,
+}: {
+    dados: any;
+    handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+    handleSubmit: (e: React.FormEvent) => void;
+    handleCancelEdit: () => void;
+    saving: boolean;
+    loading: boolean;
+}) {
+    return (
+        <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">Editar Associação</h1>
+
+            <form onSubmit={handleSubmit} className="space-y-8">
+                {/* Grid de campos */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nome</label>
+                        <input
+                            type="text"
+                            name="nome"
+                            value={dados.nome}
+                            onChange={handleChange}
+                            className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 transition"
+                            required
+                            disabled={loading || saving}
+                        />
                     </div>
-                    <div className="flex flex-col md:flex-row gap-6 mt-8">
-                        <div className="flex-1">
-                            <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Regras internas</label>
-                            <textarea
-                                name="regrasInternas"
-                                value={dados.regrasInternas}
-                                onChange={handleChange}
-                                className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg min-h-[120px] focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
-                                maxLength={1000}
-                                disabled={loading || saving}
-                            />
-                            <span className="text-xs text-gray-400 mt-1">Descreva aqui as regras combinadas do grupo (ex.: horário de chegada, faltas, disciplina, etc.)</span>
-                        </div>
-                        <div className="flex-1 flex flex-col gap-6">
-                            <div>
-                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Horário início</label>
-                                <input
-                                    type="time"
-                                    name="horarioPadraoInicio"
-                                    value={dados.horarioPadraoInicio}
-                                    onChange={handleChange}
-                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
-                                    disabled={loading || saving}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Horário fim</label>
-                                <input
-                                    type="time"
-                                    name="horarioPadraoFim"
-                                    value={dados.horarioPadraoFim}
-                                    onChange={handleChange}
-                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
-                                    disabled={loading || saving}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-base font-semibold text-green-700 dark:text-green-300 mb-2">Tipo de jogo padrão</label>
-                                <select
-                                    name="tipoJogoPadrao"
-                                    value={dados.tipoJogoPadrao}
-                                    onChange={handleChange}
-                                    className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-2 border-green-300 dark:border-green-600 rounded-xl p-4 text-lg focus:border-green-500 focus:ring-2 focus:ring-green-500/30 transition-all shadow-sm"
-                                    disabled={loading || saving}
-                                >
-                                    {TIPO_JOGO_OPCOES.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Apelido</label>
+                        <input
+                            type="text"
+                            name="apelido"
+                            value={dados.apelido}
+                            onChange={handleChange}
+                            className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 transition"
+                            disabled={loading || saving}
+                        />
                     </div>
-                    <div className="flex gap-4 justify-end mt-8">
-                        <button
-                            type="button"
-                            className="px-8 py-3 rounded-xl font-bold bg-neutral-100 text-gray-700 border border-neutral-300 hover:bg-neutral-200 hover:scale-105 transition-all duration-200 shadow-sm"
-                            onClick={handleCancelEdit}
-                            disabled={saving}
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="submit"
-                            className="px-8 py-3 rounded-xl font-bold bg-gradient-to-r from-green-600 to-green-700 text-white hover:scale-105 hover:shadow-lg transition-all duration-200 shadow-sm"
+
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Cidade</label>
+                        <input
+                            type="text"
+                            name="cidade"
+                            value={dados.cidade}
+                            onChange={handleChange}
+                            className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 transition"
+                            disabled={loading || saving}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Estado</label>
+                        <input
+                            type="text"
+                            name="estado"
+                            value={dados.estado}
+                            onChange={handleChange}
+                            className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 transition"
+                            disabled={loading || saving}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Tipo de jogo padrão</label>
+                        <select
+                            name="tipoJogoPadrao"
+                            value={dados.tipoJogoPadrao}
+                            onChange={handleChange}
+                            className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 transition"
                             disabled={loading || saving}
                         >
-                            {saving ? "Salvando..." : "Salvar alterações"}
-                        </button>
+                            {TIPO_JOGO_OPCOES.map((opt) => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
                     </div>
-                </form>
-            )}
-            {loading && <div className="mt-8 text-center text-gray-400">Carregando dados...</div>}
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Logo</label>
+                        <input
+                            type="file"
+                            name="logo"
+                            accept="image/*"
+                            className="w-full text-sm text-gray-600 dark:text-gray-400 file:bg-blue-600 file:text-white file:border-0 file:rounded-lg file:px-3 file:py-2 file:cursor-pointer"
+                            disabled={loading || saving}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Horário início</label>
+                        <input
+                            type="time"
+                            name="horarioPadraoInicio"
+                            value={dados.horarioPadraoInicio}
+                            onChange={handleChange}
+                            className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 transition"
+                            disabled={loading || saving}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Horário fim</label>
+                        <input
+                            type="time"
+                            name="horarioPadraoFim"
+                            value={dados.horarioPadraoFim}
+                            onChange={handleChange}
+                            className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 transition"
+                            disabled={loading || saving}
+                        />
+                    </div>
+                </div>
+
+                {/* Descrição */}
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Descrição / Sobre</label>
+                    <textarea
+                        name="descricao"
+                        value={dados.descricao}
+                        onChange={handleChange}
+                        placeholder="Conte a história da sua associação..."
+                        className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 transition min-h-[100px]"
+                        disabled={loading || saving}
+                    />
+                </div>
+
+                {/* Regras Internas */}
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Regras internas</label>
+                    <textarea
+                        name="regrasInternas"
+                        value={dados.regrasInternas}
+                        onChange={handleChange}
+                        placeholder="Descreva as regras combinadas do grupo..."
+                        className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 transition min-h-[120px]"
+                        maxLength={1000}
+                        disabled={loading || saving}
+                    />
+                    <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">{dados.regrasInternas.length} / 1000 caracteres</span>
+                </div>
+
+                {/* Botões */}
+                <div className="flex gap-3 justify-end">
+                    <button
+                        type="button"
+                        className="px-6 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                        onClick={handleCancelEdit}
+                        disabled={saving}
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:opacity-90 transition disabled:opacity-50"
+                        disabled={loading || saving}
+                    >
+                        {saving ? "Salvando..." : "Salvar alterações"}
+                    </button>
+                </div>
+            </form>
         </div>
     );
 }
