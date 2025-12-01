@@ -274,235 +274,298 @@ export default function Mensalidades() {
             });
     }, [mensalidadesAssociado, searchTerm, statusFilter]);
 
+    // Cálculos para o mês atual
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const isCurrentYear = anoSelecionado === currentYear;
+    const currentMonthIdx = isCurrentYear ? currentMonth : -1;
+    const statAtual = currentMonthIdx >= 0 ? statsByMonth[currentMonthIdx] : { pagos: 0, abertos: 0, atrasados: 0 };
+    const totalAtual = statAtual.pagos + statAtual.abertos + statAtual.atrasados;
+    const pctPagoAtual = totalAtual === 0 ? 0 : (statAtual.pagos / totalAtual) * 100;
+
     return (
-        <div className="flex flex-col gap-6">
-            <header className="flex items-center justify-between">
+        <div className="flex flex-col gap-6 pb-8">
+            {/* Header com controles */}
+            <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-semibold">Mensalidades</h1>
-                    <p className="text-sm text-gray-500">Controle do carnê dos associados ao longo do ano</p>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Mensalidades</h1>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Controle do carnê dos associados</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <select value={anoSelecionado} onChange={(e) => setAnoSelecionado(Number(e.target.value))} className="rounded-lg border px-3 py-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                    <select
+                        value={anoSelecionado}
+                        onChange={(e) => setAnoSelecionado(Number(e.target.value))}
+                        className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm font-medium dark:text-white"
+                    >
                         <option value={anoSelecionado - 1}>{anoSelecionado - 1}</option>
                         <option value={anoSelecionado}>{anoSelecionado}</option>
                         <option value={anoSelecionado + 1}>{anoSelecionado + 1}</option>
                     </select>
                     {isManager && (
-                        <button onClick={gerarAno} className="rounded-lg bg-primary-dark-9 px-3 py-2 text-sm text-white">
+                        <button
+                            onClick={gerarAno}
+                            className="rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition"
+                        >
                             Gerar carnê do ano
                         </button>
                     )}
                 </div>
             </header>
 
-            <div className="flex items-center gap-3">
-                <button onClick={() => setViewMode("mes")} className={`px-3 py-1 rounded-full ${viewMode === "mes" ? "bg-primary-dark-9 text-white" : "border"}`}>
+            {/* Tabs: Por mês / Por associado */}
+            <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
+                <button
+                    onClick={() => setViewMode("mes")}
+                    className={`px-4 py-3 font-medium border-b-2 transition ${viewMode === "mes" ? "border-purple-600 text-purple-600 dark:text-purple-400" : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"}`}
+                >
                     Por mês
                 </button>
-                <button onClick={() => setViewMode("associado")} className={`px-3 py-1 rounded-full ${viewMode === "associado" ? "bg-primary-dark-9 text-white" : "border"}`}>
+                <button
+                    onClick={() => setViewMode("associado")}
+                    className={`px-4 py-3 font-medium border-b-2 transition ${viewMode === "associado" ? "border-purple-600 text-purple-600 dark:text-purple-400" : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"}`}
+                >
                     Por associado
                 </button>
             </div>
 
             {viewMode === "mes" && (
-                <section>
-                    {/* Destaque: mês atual em destaque ocupando a largura */}
-                    {/* Collapsible: outros meses - aparece no início e aberto por padrão */}
-                    <CollapsibleMonths
+                <section className="space-y-6">
+                    {/* Hero Card: Mês Atual */}
+                    {isCurrentYear && (
+                        <MesAtualHero
+                            mes={currentMonth + 1}
+                            ano={anoSelecionado}
+                            stats={statAtual}
+                            total={totalAtual}
+                            pctPago={pctPagoAtual}
+                            onVerMensalidades={() => setMesSelecionado(currentMonth + 1)}
+                        />
+                    )}
+
+                    {/* Grid de Meses */}
+                    <MesesGrid
                         anosel={anoSelecionado}
                         statsByMonth={statsByMonth}
+                        mesSelecionado={mesSelecionado}
                         onSelectMonth={(m) => setMesSelecionado(m)}
+                        currentMonth={currentMonthIdx}
                     />
 
-                    {(() => {
-                        const currentIdx = new Date().getMonth();
-                        const stat = statsByMonth[currentIdx];
-                        const destaque = new Date().getFullYear() === anoSelecionado;
-                        const total = stat.pagos + stat.abertos + stat.atrasados;
-                        const pctPago = total === 0 ? 0 : (stat.pagos / total) * 100;
-                        const color = pctPago >= 70 ? "bg-green-400" : pctPago >= 40 ? "bg-yellow-400" : "bg-red-400";
-                        return (
-                            <div className="w-full mb-4">
-                                <div onClick={() => setMesSelecionado(currentIdx + 1)} className={`cursor-pointer rounded-2xl border p-4 ${destaque ? "ring-2 ring-primary-dark-7" : ""}`}>
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <div className="text-sm font-semibold">{MONTH_NAMES[currentIdx]}</div>
-                                            <div className="text-xs text-gray-500">{anoSelecionado}</div>
-                                        </div>
-                                        {destaque && <div className="text-xs text-white bg-primary-dark-9 px-2 py-1 rounded">Mês atual</div>}
-                                    </div>
-                                    <div className="mt-3 text-sm">
-                                        <div>Pagos: <strong>{stat.pagos}</strong></div>
-                                        <div>Em aberto: <strong>{stat.abertos}</strong></div>
-                                        <div>Atrasados: <strong>{stat.atrasados}</strong></div>
-                                    </div>
-                                    <div className="h-2 rounded-full mt-3 bg-white/10 overflow-hidden">
-                                        <div className={`${color} h-2`} style={{ width: `${pctPago}%` }} />
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })()}
-
+                    {/* Tabela de Mensalidades */}
                     {mesSelecionado && (
-                        <div className="mt-6">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold">Mensalidades de {MONTH_NAMES[mesSelecionado - 1]} / {anoSelecionado}</h3>
-                                <div className="flex items-center gap-2">
-                                    <input placeholder="Buscar associado" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="rounded border px-3 py-1" />
-                                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="rounded border px-3 py-1">
-                                        <option value="ALL">Todos</option>
-                                        <option value="ABERTA">Apenas abertos</option>
-                                        <option value="ATRASADA">Atrasados</option>
-                                        <option value="PAGA">Pagos</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="mt-4 rounded-xl border p-4">
-                                <table className="w-full text-left">
-                                    <thead>
-                                        <tr className="text-sm text-gray-600">
-                                            <th className="p-2">Associado</th>
-                                            <th className="p-2">Valor</th>
-                                            <th className="p-2">Status</th>
-                                            <th className="p-2">Vencimento</th>
-                                            <th className="p-2">Pagamento</th>
-                                            <th className="p-2">Forma</th>
-                                            <th className="p-2">Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {loading ? (
-                                            <tr>
-                                                <td colSpan={7} className="p-4 text-center">Carregando...</td>
-                                            </tr>
-                                        ) : mensalidadesDoMes.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={7} className="p-4 text-center">Nenhuma mensalidade neste mês.</td>
-                                            </tr>
-                                        ) : (
-                                            mensalidadesDoMes.map((m) => (
-                                                <tr key={m.id} className="border-t">
-                                                    <td className="p-2">{(m as any).usuario?.nome || (m as any).usuario?.apelido || `Usuário ${m.usuarioId}`}</td>
-                                                    <td className="p-2">R$ {Number(m.valor || 0).toFixed(2)}</td>
-                                                    <td className="p-2">
-                                                        <span className={`px-2 py-1 rounded text-xs ${m.status === "PAGA" ? "bg-green-100 text-green-800" : m.status === "ABERTA" ? "bg-yellow-100 text-yellow-800" : m.status === "ATRASADA" ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-700"}`}>
-                                                            {m.status}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-2">{format(new Date(m.vencimento), "dd/MM/yyyy")}</td>
-                                                    <td className="p-2">{m.dataPagamento ? format(new Date(m.dataPagamento), "dd/MM/yyyy") : "-"}</td>
-                                                    <td className="p-2">{m.formaPagamento || "-"}</td>
-                                                    <td className="p-2">
-                                                        {m.status !== "PAGA" ? (
-                                                            <button onClick={() => abrirModalPagamento(m)} className="rounded-md bg-green-600 px-3 py-1 text-sm text-white">Registrar pagamento</button>
-                                                        ) : (
-                                                            <button onClick={() => {
-                                                                setMensalidadeSelecionada(m);
-                                                                setModalOpen(true);
-                                                            }} className="rounded-md border px-3 py-1 text-sm">Ver detalhes</button>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                        <MensalidadesTabela
+                            mes={mesSelecionado}
+                            ano={anoSelecionado}
+                            dados={mensalidadesDoMes}
+                            loading={loading}
+                            searchTerm={searchTerm}
+                            statusFilter={statusFilter}
+                            onChangeSearch={setSearchTerm}
+                            onChangeStatusFilter={setStatusFilter}
+                            onRegistrarPagamento={abrirModalPagamento}
+                        />
                     )}
                 </section>
             )}
 
             {viewMode === "associado" && (
-                <section>
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold">Por associado</h3>
-                        <div className="flex items-center gap-2">
-                            {isManager && (
-                                <select onChange={(e) => setAssociadoSelecionadoId(Number(e.target.value) || null)} className="rounded border px-3 py-1">
-                                    <option value="">Selecione um associado</option>
-                                    {associados.map((a) => (
-                                        <option key={a.id} value={a.id}>{a.nome} {a.apelido ? `(${a.apelido})` : ''}</option>
-                                    ))}
-                                </select>
-                            )}
-                            {!isManager && <div className="text-sm">Meu carnê</div>}
+                <section className="space-y-6">
+                    {/* Seletor de Associado */}
+                    {isManager ? (
+                        <div className={`rounded-xl border ${isDark ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200'} p-6`}>
+                            <label className={`block text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                Selecionar associado
+                            </label>
+                            <select
+                                onChange={(e) => setAssociadoSelecionadoId(Number(e.target.value) || null)}
+                                className={`w-full rounded-lg border px-4 py-2 font-medium transition ${isDark ? 'bg-gray-800 border-gray-600 text-white focus:ring-purple-500' : 'bg-white border-gray-300 text-gray-900 focus:ring-purple-500'} focus:ring-2 focus:ring-opacity-50`}
+                            >
+                                <option value="">Escolha um associado...</option>
+                                {associados.map((a) => (
+                                    <option key={a.id} value={a.id}>
+                                        {a.nome} {a.apelido ? `(${a.apelido})` : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    ) : (
+                        <div className={`rounded-xl border ${isDark ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200'} p-6`}>
+                            <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                Meu carnê de mensalidades
+                            </h3>
+                            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
+                                Acompanhe suas mensalidades ao longo do ano
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Cards de Resumo */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className={`rounded-lg border p-4 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                            <p className={`text-xs uppercase tracking-wider font-semibold ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-1`}>
+                                Total
+                            </p>
+                            <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                {mensalidadesAssociado.length}
+                            </p>
+                        </div>
+                        <div className={`rounded-lg border p-4 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                            <p className={`text-xs uppercase tracking-wider font-semibold ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-1`}>
+                                Pagos
+                            </p>
+                            <p className={`text-2xl font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                                {mensalidadesAssociado.filter(m => m.status === 'PAGA').length}
+                            </p>
+                        </div>
+                        <div className={`rounded-lg border p-4 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                            <p className={`text-xs uppercase tracking-wider font-semibold ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-1`}>
+                                Abertos
+                            </p>
+                            <p className={`text-2xl font-bold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                                {mensalidadesAssociado.filter(m => m.status === 'ABERTA').length}
+                            </p>
+                        </div>
+                        <div className={`rounded-lg border p-4 ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                            <p className={`text-xs uppercase tracking-wider font-semibold ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-1`}>
+                                Atrasados
+                            </p>
+                            <p className={`text-2xl font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                                {mensalidadesAssociado.filter(m => m.status === 'ATRASADA').length}
+                            </p>
                         </div>
                     </div>
 
-                    <div className="mt-4 rounded-xl border p-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h4 className="font-semibold">Resumo do carnê {associadoSelecionadoId ? '' : ''}</h4>
+                    {/* Tabela */}
+                    <div className={`rounded-2xl border ${isDark ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200'} p-6`}>
+                        {/* Filtros */}
+                        <div className={`rounded-lg border flex flex-col md:flex-row gap-3 p-4 mb-6 ${isDark ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+                            <div className="flex-1">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className={`w-full rounded-lg border px-3 py-2 text-sm transition ${isDark ? 'bg-gray-800 border-gray-600 text-white placeholder:text-gray-500 focus:ring-purple-500' : 'bg-white border-gray-300 text-gray-900 focus:ring-purple-500'} focus:ring-2 focus:ring-opacity-50`}
+                                />
                             </div>
-                            <div className="flex items-center gap-2">
-                                <input placeholder="Buscar" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="rounded border px-3 py-1" />
-                                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="rounded border px-3 py-1">
-                                    <option value="ALL">Todos</option>
-                                    <option value="ABERTA">Abertos</option>
-                                    <option value="ATRASADA">Atrasados</option>
-                                    <option value="PAGA">Pagos</option>
-                                </select>
-                            </div>
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value as any)}
+                                className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${isDark ? 'bg-gray-800 border-gray-600 text-white focus:ring-purple-500' : 'bg-white border-gray-300 text-gray-900 focus:ring-purple-500'} focus:ring-2 focus:ring-opacity-50`}
+                            >
+                                <option value="ALL">Todos os status</option>
+                                <option value="PAGA">Pagos</option>
+                                <option value="ABERTA">Abertos</option>
+                                <option value="ATRASADA">Atrasados</option>
+                            </select>
                         </div>
 
-                        <div className="mt-4">
-                            {/* resumo simples */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="rounded-lg border p-3">
-                                    <div className="text-sm text-gray-500">Total de mensalidades</div>
-                                    <div className="font-semibold">{mensalidadesAssociado.length}</div>
-                                </div>
-                                <div className="rounded-lg border p-3">
-                                    <div className="text-sm text-gray-500">Pagas</div>
-                                    <div className="font-semibold">{mensalidadesAssociado.filter(m => m.status === 'PAGA').length}</div>
-                                </div>
-                                <div className="rounded-lg border p-3">
-                                    <div className="text-sm text-gray-500">Em aberto</div>
-                                    <div className="font-semibold">{mensalidadesAssociado.filter(m => m.status === 'ABERTA').length}</div>
-                                </div>
-                                <div className="rounded-lg border p-3">
-                                    <div className="text-sm text-gray-500">Atrasadas</div>
-                                    <div className="font-semibold">{mensalidadesAssociado.filter(m => m.status === 'ATRASADA').length}</div>
-                                </div>
-                            </div>
-
-                            <div className="mt-4">
-                                <table className="w-full text-left">
-                                    <thead>
-                                        <tr className="text-sm text-gray-600">
-                                            <th className="p-2">Mês</th>
-                                            <th className="p-2">Vencimento</th>
-                                            <th className="p-2">Valor</th>
-                                            <th className="p-2">Status</th>
-                                            <th className="p-2">Pagamento</th>
-                                            <th className="p-2">Forma</th>
-                                            <th className="p-2">Ações</th>
+                        {/* Tabela de Meses */}
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className={`border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+                                        <th className={`text-left py-3 px-4 font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                            Mês
+                                        </th>
+                                        <th className={`text-center py-3 px-4 font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                            Vencimento
+                                        </th>
+                                        <th className={`text-right py-3 px-4 font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                            Valor
+                                        </th>
+                                        <th className={`text-left py-3 px-4 font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                            Status
+                                        </th>
+                                        <th className={`text-center py-3 px-4 font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                            Pagamento
+                                        </th>
+                                        <th className={`text-center py-3 px-4 font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                            Forma
+                                        </th>
+                                        <th className={`text-right py-3 px-4 font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                            Ação
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {loading ? (
+                                        <tr>
+                                            <td colSpan={7} className={`py-8 text-center ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                Carregando...
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {loading ? (
-                                            <tr><td colSpan={7} className="p-4 text-center">Carregando...</td></tr>
-                                        ) : mensalidadesDoAssociado.length === 0 ? (
-                                            <tr><td colSpan={7} className="p-4 text-center">Nenhuma mensalidade encontrada.</td></tr>
-                                        ) : (
-                                            mensalidadesDoAssociado.map((m) => (
-                                                <tr key={m.id} className="border-t">
-                                                    <td className="p-2">{MONTH_NAMES[m.mes - 1]}</td>
-                                                    <td className="p-2">{format(new Date(m.vencimento), 'dd/MM/yyyy')}</td>
-                                                    <td className="p-2">R$ {Number(m.valor || 0).toFixed(2)}</td>
-                                                    <td className="p-2"><span className={`px-2 py-1 rounded text-xs ${m.status === "PAGA" ? "bg-green-100 text-green-800" : m.status === "ABERTA" ? "bg-yellow-100 text-yellow-800" : m.status === "ATRASADA" ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-700"}`}>{m.status}</span></td>
-                                                    <td className="p-2">{m.dataPagamento ? format(new Date(m.dataPagamento), 'dd/MM/yyyy') : '-'}</td>
-                                                    <td className="p-2">{m.formaPagamento || '-'}</td>
-                                                    <td className="p-2">{m.status !== 'PAGA' ? <button onClick={() => abrirModalPagamento(m)} className="rounded-md bg-green-600 px-3 py-1 text-sm text-white">Registrar pagamento</button> : <button onClick={() => { setMensalidadeSelecionada(m); setModalOpen(true); }} className="rounded-md border px-3 py-1 text-sm">Ver</button>}</td>
+                                    ) : mensalidadesDoAssociado.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={7} className={`py-8 text-center ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                Nenhuma mensalidade encontrada
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        mensalidadesDoAssociado.map((m) => {
+                                            const statusBadges: Record<string, { icon: string; bg: string; text: string }> = {
+                                                PAGA: {
+                                                    icon: "✓",
+                                                    bg: isDark ? "bg-green-900/30 text-green-200" : "bg-green-100 text-green-700",
+                                                    text: "Paga",
+                                                },
+                                                ABERTA: {
+                                                    icon: "⏳",
+                                                    bg: isDark ? "bg-yellow-900/30 text-yellow-200" : "bg-yellow-100 text-yellow-700",
+                                                    text: "Aberta",
+                                                },
+                                                ATRASADA: {
+                                                    icon: "⚠",
+                                                    bg: isDark ? "bg-red-900/30 text-red-200" : "bg-red-100 text-red-700",
+                                                    text: "Atrasada",
+                                                },
+                                            };
+                                            const badge = statusBadges[m.status] || statusBadges.ABERTA;
+                                            return (
+                                                <tr
+                                                    key={m.id}
+                                                    className={`border-b transition ${isDark ? 'border-gray-700 hover:bg-gray-700/30' : 'border-gray-200 hover:bg-gray-50'}`}
+                                                >
+                                                    <td className={`py-3 px-4 font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                                        {MONTH_NAMES[m.mes - 1]}
+                                                    </td>
+                                                    <td className={`text-center py-3 px-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                        {format(new Date(m.vencimento), 'dd/MM/yy')}
+                                                    </td>
+                                                    <td className={`text-right py-3 px-4 font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                                        R$ {Number(m.valor || 0).toFixed(2)}
+                                                    </td>
+                                                    <td className="py-3 px-4">
+                                                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${badge.bg}`}>
+                                                            {badge.icon} {badge.text}
+                                                        </span>
+                                                    </td>
+                                                    <td className={`text-center py-3 px-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                        {m.dataPagamento ? format(new Date(m.dataPagamento), 'dd/MM/yy') : '—'}
+                                                    </td>
+                                                    <td className={`text-center py-3 px-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                                        {m.formaPagamento || '—'}
+                                                    </td>
+                                                    <td className="text-right py-3 px-4">
+                                                        {m.status !== 'PAGA' ? (
+                                                            <button
+                                                                onClick={() => abrirModalPagamento(m)}
+                                                                className="rounded-lg bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 px-3 py-1.5 text-xs font-semibold text-white transition"
+                                                            >
+                                                                Registrar
+                                                            </button>
+                                                        ) : (
+                                                            <span className={`text-xs font-semibold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                                                                ✓ Pago
+                                                            </span>
+                                                        )}
+                                                    </td>
                                                 </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </section>
@@ -658,49 +721,391 @@ function ConfigForm({ onCancel, onSave, loading }: {
 // Aqui usamos mensalidadesApi.upsertConfig através de handleSaveConfig
 // showConfigModal é controlado no componente principal
 
-function CollapsibleMonths({ anosel, statsByMonth, onSelectMonth }: { anosel: number; statsByMonth: { pagos: number; abertos: number; atrasados: number }[]; onSelectMonth: (m: number) => void }) {
-    const [open, setOpen] = useState(true);
+/* ========================================
+   HERO CARD: MÊS ATUAL
+======================================== */
+function MesAtualHero({
+    mes,
+    ano,
+    stats,
+    total,
+    pctPago,
+    onVerMensalidades
+}: {
+    mes: number;
+    ano: number;
+    stats: { pagos: number; abertos: number; atrasados: number };
+    total: number;
+    pctPago: number;
+    onVerMensalidades: () => void;
+}) {
     const { isDark } = useTheme();
-    const currentIdx = new Date().getMonth();
+    const mesNome = MONTH_NAMES[mes - 1];
 
-    const others = MONTH_NAMES.map((name, idx) => ({ name, idx })).filter((it) => it.idx !== currentIdx);
+    const getProgressColor = (pct: number) => {
+        if (pct >= 70) return "from-green-500 to-green-600";
+        if (pct >= 40) return "from-yellow-500 to-yellow-600";
+        return "from-red-500 to-red-600";
+    };
 
     return (
-        <div className="w-full mb-4">
-            <div className="flex items-center justify-between">
-                <div />
-                <button onClick={() => setOpen((s) => !s)} className={`text-sm ${isDark ? 'text-white/80' : 'text-primary-dark-9'}`}>
-                    {open ? 'Ocultar meses' : 'Ver todos meses'}
+        <div className={`rounded-2xl border ${isDark ? 'bg-gradient-to-br from-purple-900/30 to-transparent border-purple-500/20' : 'bg-gradient-to-br from-purple-50 to-transparent border-purple-200'} p-6 md:p-8`}>
+            <div className="flex items-start justify-between mb-6">
+                <div>
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isDark ? 'bg-purple-500/20 text-purple-200' : 'bg-purple-100 text-purple-700'}`}>
+                            Mês atual
+                        </span>
+                    </div>
+                    <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {mesNome} / {ano}
+                    </h2>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
+                        Visão geral das mensalidades deste mês
+                    </p>
+                </div>
+                <button
+                    onClick={onVerMensalidades}
+                    className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${isDark ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-purple-600 hover:bg-purple-700 text-white'}`}
+                >
+                    Ver detalhes ↓
                 </button>
             </div>
+
+            {/* Grid de stats */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                <div className={`rounded-lg p-4 ${isDark ? 'bg-white/5 border border-white/10' : 'bg-white border border-gray-200'}`}>
+                    <p className={`text-xs uppercase tracking-wider font-semibold ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Pagos</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>{stats.pagos}</p>
+                </div>
+                <div className={`rounded-lg p-4 ${isDark ? 'bg-white/5 border border-white/10' : 'bg-white border border-gray-200'}`}>
+                    <p className={`text-xs uppercase tracking-wider font-semibold ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Em aberto</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>{stats.abertos}</p>
+                </div>
+                <div className={`rounded-lg p-4 ${isDark ? 'bg-white/5 border border-white/10' : 'bg-white border border-gray-200'}`}>
+                    <p className={`text-xs uppercase tracking-wider font-semibold ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Atrasados</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>{stats.atrasados}</p>
+                </div>
+                <div className={`rounded-lg p-4 ${isDark ? 'bg-white/5 border border-white/10' : 'bg-white border border-gray-200'} col-span-2 md:col-span-2`}>
+                    <p className={`text-xs uppercase tracking-wider font-semibold ${isDark ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Total</p>
+                    <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{total}</p>
+                </div>
+            </div>
+
+            {/* Barra de Progresso */}
+            <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                    <p className={`text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Taxa de mensalidades pagas
+                    </p>
+                    <p className={`text-sm font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        {pctPago.toFixed(0)}%
+                    </p>
+                </div>
+                <div className={`h-3 rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}>
+                    <div
+                        className={`h-full bg-gradient-to-r ${getProgressColor(pctPago)} transition-all duration-500`}
+                        style={{ width: `${pctPago}%` }}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ========================================
+   GRID DE MESES
+======================================== */
+function MesesGrid({
+    anosel,
+    statsByMonth,
+    mesSelecionado,
+    onSelectMonth,
+    currentMonth,
+}: {
+    anosel: number;
+    statsByMonth: { pagos: number; abertos: number; atrasados: number }[];
+    mesSelecionado: number | null;
+    onSelectMonth: (m: number) => void;
+    currentMonth: number;
+}) {
+    const { isDark } = useTheme();
+    const [open, setOpen] = useState(true);
+
+    const others = MONTH_NAMES.map((name, idx) => ({ name, idx })).filter((it) => it.idx !== currentMonth);
+
+    const getProgressColor = (pct: number) => {
+        if (pct >= 70) return "bg-green-400";
+        if (pct >= 40) return "bg-yellow-400";
+        return "bg-red-400";
+    };
+
+    return (
+        <div className="space-y-4">
+            {/* Toggle */}
+            <div className="flex items-center justify-end">
+                <button
+                    onClick={() => setOpen((s) => !s)}
+                    className={`text-sm font-medium flex items-center gap-1 transition ${isDark ? 'text-purple-400 hover:text-purple-300' : 'text-purple-600 hover:text-purple-700'}`}
+                >
+                    {open ? '▼' : '▶'} {open ? 'Ocultar meses' : 'Ver todos os meses'}
+                </button>
+            </div>
+
+            {/* Grid */}
             {open && (
-                <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {others.map(({ name, idx }) => {
                         const stat = statsByMonth[idx];
                         const total = stat.pagos + stat.abertos + stat.atrasados;
                         const pctPago = total === 0 ? 0 : (stat.pagos / total) * 100;
-                        const color = pctPago >= 70 ? 'bg-green-400' : pctPago >= 40 ? 'bg-yellow-400' : 'bg-red-400';
+                        const isSelected = mesSelecionado === idx + 1;
+
                         return (
-                            <div key={name} onClick={() => { onSelectMonth(idx + 1); }} className={`cursor-pointer rounded-2xl border p-4`}>
-                                <div className="flex items-center justify-between">
+                            <button
+                                key={name}
+                                onClick={() => onSelectMonth(idx + 1)}
+                                className={`text-left rounded-xl border transition ${isSelected
+                                    ? isDark
+                                        ? 'bg-purple-600/20 border-purple-500 ring-2 ring-purple-500'
+                                        : 'bg-purple-100 border-purple-400 ring-2 ring-purple-400'
+                                    : isDark
+                                        ? 'bg-gray-800 border-gray-700 hover:border-gray-600'
+                                        : 'bg-white border-gray-200 hover:border-gray-300'
+                                    } p-4 group`}
+                            >
+                                <div className="flex items-center justify-between mb-3">
                                     <div>
-                                        <div className="text-sm font-semibold">{name}</div>
-                                        <div className="text-xs text-gray-500">{anosel}</div>
+                                        <p className={`font-semibold ${isDark ? 'text-white group-hover:text-gray-200' : 'text-gray-900 group-hover:text-gray-700'}`}>
+                                            {name}
+                                        </p>
+                                        <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
+                                            {anosel}
+                                        </p>
                                     </div>
                                 </div>
-                                <div className="mt-3 text-sm">
-                                    <div>Pagos: <strong>{stat.pagos}</strong></div>
-                                    <div>Em aberto: <strong>{stat.abertos}</strong></div>
-                                    <div>Atrasados: <strong>{stat.atrasados}</strong></div>
+
+                                <div className="space-y-1 text-xs mb-3">
+                                    <div className="flex justify-between">
+                                        <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Pagos:</span>
+                                        <span className={`font-semibold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                                            {stat.pagos}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Abertos:</span>
+                                        <span className={`font-semibold ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                                            {stat.abertos}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>Atrasados:</span>
+                                        <span className={`font-semibold ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                                            {stat.atrasados}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="h-2 rounded-full mt-3 bg-white/10 overflow-hidden">
-                                    <div className={`${color} h-2`} style={{ width: `${pctPago}%` }} />
+
+                                <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}>
+                                    <div
+                                        className={`h-full ${getProgressColor(pctPago)} transition-all`}
+                                        style={{ width: `${pctPago}%` }}
+                                    />
                                 </div>
-                            </div>
+                            </button>
                         );
                     })}
                 </div>
             )}
+        </div>
+    );
+}
+
+/* ========================================
+   TABELA DE MENSALIDADES
+======================================== */
+function MensalidadesTabela({
+    mes,
+    ano,
+    dados,
+    loading,
+    searchTerm,
+    statusFilter,
+    onChangeSearch,
+    onChangeStatusFilter,
+    onRegistrarPagamento,
+}: {
+    mes: number;
+    ano: number;
+    dados: Mensalidade[];
+    loading: boolean;
+    searchTerm: string;
+    statusFilter: "ALL" | "ABERTA" | "PAGA" | "ATRASADA";
+    onChangeSearch: (term: string) => void;
+    onChangeStatusFilter: (status: any) => void;
+    onRegistrarPagamento: (m: Mensalidade) => void;
+}) {
+    const { isDark } = useTheme();
+    const mesNome = MONTH_NAMES[mes - 1];
+
+    const getStatusBadge = (status: string) => {
+        const badges: Record<string, { icon: string; bg: string; text: string }> = {
+            PAGA: {
+                icon: "✓",
+                bg: isDark ? "bg-green-900/30 text-green-200" : "bg-green-100 text-green-700",
+                text: "Paga",
+            },
+            ABERTA: {
+                icon: "⏳",
+                bg: isDark ? "bg-yellow-900/30 text-yellow-200" : "bg-yellow-100 text-yellow-700",
+                text: "Aberta",
+            },
+            ATRASADA: {
+                icon: "⚠",
+                bg: isDark ? "bg-red-900/30 text-red-200" : "bg-red-100 text-red-700",
+                text: "Atrasada",
+            },
+        };
+        const badge = badges[status] || badges.ABERTA;
+        return badge;
+    };
+
+    return (
+        <div className={`rounded-2xl border ${isDark ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200'} p-6`}>
+            {/* Header */}
+            <div className="mb-6">
+                <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'} mb-4`}>
+                    Mensalidades de {mesNome} / {ano}
+                </h3>
+
+                {/* Filtros */}
+                <div className={`rounded-lg border flex flex-col md:flex-row gap-3 p-4 ${isDark ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+                    <div className="flex-1">
+                        <input
+                            type="text"
+                            placeholder="Buscar associado..."
+                            value={searchTerm}
+                            onChange={(e) => onChangeSearch(e.target.value)}
+                            className={`w-full rounded-lg border px-3 py-2 text-sm transition ${isDark ? 'bg-gray-800 border-gray-600 text-white placeholder:text-gray-500 focus:ring-purple-500' : 'bg-white border-gray-300 text-gray-900 focus:ring-purple-500'} focus:ring-2 focus:ring-opacity-50`}
+                        />
+                    </div>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => onChangeStatusFilter(e.target.value)}
+                        className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${isDark ? 'bg-gray-800 border-gray-600 text-white focus:ring-purple-500' : 'bg-white border-gray-300 text-gray-900 focus:ring-purple-500'} focus:ring-2 focus:ring-opacity-50`}
+                    >
+                        <option value="ALL">Todos os status</option>
+                        <option value="PAGA">Pagos</option>
+                        <option value="ABERTA">Abertos</option>
+                        <option value="ATRASADA">Atrasados</option>
+                    </select>
+                </div>
+            </div>
+
+            {/* Tabela */}
+            <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className={`border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+                            <th className={`text-left py-3 px-4 font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Associado
+                            </th>
+                            <th className={`text-right py-3 px-4 font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Valor
+                            </th>
+                            <th className={`text-left py-3 px-4 font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Status
+                            </th>
+                            <th className={`text-center py-3 px-4 font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Vencimento
+                            </th>
+                            <th className={`text-center py-3 px-4 font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Pagamento
+                            </th>
+                            <th className={`text-center py-3 px-4 font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Forma
+                            </th>
+                            <th className={`text-right py-3 px-4 font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Ação
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (
+                            <tr>
+                                <td colSpan={7} className={`py-8 text-center ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    Carregando...
+                                </td>
+                            </tr>
+                        ) : dados.length === 0 ? (
+                            <tr>
+                                <td colSpan={7} className={`py-8 text-center ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    Nenhuma mensalidade encontrada
+                                </td>
+                            </tr>
+                        ) : (
+                            dados.map((m) => {
+                                const badge = getStatusBadge(m.status);
+                                return (
+                                    <tr
+                                        key={m.id}
+                                        className={`border-b transition ${isDark ? 'border-gray-700 hover:bg-gray-700/30' : 'border-gray-200 hover:bg-gray-50'}`}
+                                    >
+                                        <td className={`py-3 px-4 font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-white ${isDark ? 'bg-purple-600' : 'bg-purple-500'}`}>
+                                                    {((m as any).usuario?.nome || `U`)[0].toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold">
+                                                        {(m as any).usuario?.nome || `Usuário ${m.usuarioId}`}
+                                                    </p>
+                                                    {(m as any).usuario?.apelido && (
+                                                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                                            ({(m as any).usuario.apelido})
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className={`text-right py-3 px-4 font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                            R$ {Number(m.valor || 0).toFixed(2)}
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${badge.bg}`}>
+                                                {badge.icon} {badge.text}
+                                            </span>
+                                        </td>
+                                        <td className={`text-center py-3 px-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                            {format(new Date(m.vencimento), "dd/MM/yy")}
+                                        </td>
+                                        <td className={`text-center py-3 px-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                            {m.dataPagamento ? format(new Date(m.dataPagamento), "dd/MM/yy") : "—"}
+                                        </td>
+                                        <td className={`text-center py-3 px-4 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                            {m.formaPagamento || "—"}
+                                        </td>
+                                        <td className="text-right py-3 px-4">
+                                            {m.status !== "PAGA" ? (
+                                                <button
+                                                    onClick={() => onRegistrarPagamento(m)}
+                                                    className="rounded-lg bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 px-3 py-1.5 text-xs font-semibold text-white transition"
+                                                >
+                                                    Registrar
+                                                </button>
+                                            ) : (
+                                                <span className={`text-xs font-semibold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                                                    ✓ Pago
+                                                </span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }
